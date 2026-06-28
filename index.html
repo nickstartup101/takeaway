@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Dolce Takeaway</title>
+  
+  <!-- Tabler Icons CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  
+  <!-- Firebase App and Firestore compatibility scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+  :root {
+    --font-sans: system-ui, -apple-system, sans-serif;
+    --surface-0: #ffffff;
+    --surface-1: #f9f9fb;
+    --surface-2: #f1f1f5;
+    --border: #e2e2e9;
+    --border-strong: #cacaca;
+    --border-accent: #FF8F00;
+    --text-primary: #1c1c1e;
+    --text-secondary: #5c5c60;
+    --text-muted: #8e8e93;
+    --text-accent: #FF8F00;
+    --bg-accent: #FFF3E0;
+    --radius: 8px;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font-sans);background:transparent}
+  .app{background:var(--surface-0);border-radius:12px;overflow:hidden;min-height:560px}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--surface-2);border-bottom:0.5px solid var(--border)}
+  .logo{font-size:15px;font-weight:500;color:var(--text-primary);display:flex;align-items:center;gap:8px}
+  .logo-sub{color:var(--text-muted);font-weight:400;font-size:12px}
+  .view-toggle{display:flex;gap:3px;background:var(--surface-1);border-radius:var(--radius);padding:3px}
+  .vbtn{padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;border:none;background:transparent;color:var(--text-secondary);transition:all .15s}
+  .vbtn.on{background:var(--surface-2);color:var(--text-primary);font-weight:500;border:0.5px solid var(--border)}
+
+  /* PIN SCREEN */
+  .pin-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;gap:20px;padding:32px}
+  .pin-title{font-size:16px;font-weight:500;color:var(--text-primary)}
+  .pin-sub{font-size:12px;color:var(--text-muted)}
+  .pin-dots{display:flex;gap:10px;margin:4px 0}
+  .pin-dot{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--border-strong);background:transparent;transition:background .15s}
+  .pin-dot.filled{background:#FF8F00;border-color:#FF8F00}
+  .pin-pad{display:grid;grid-template-columns:repeat(3,64px);gap:8px}
+  .pin-key{height:52px;border-radius:10px;border:0.5px solid var(--border-strong);background:var(--surface-2);font-size:18px;font-weight:500;color:var(--text-primary);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center}
+  .pin-key:hover{background:var(--surface-1);border-color:var(--border-accent)}
+  .pin-key:active{transform:scale(.95)}
+  .pin-key.del{font-size:14px;color:var(--text-secondary)}
+  .pin-error{font-size:12px;color:#E24B4A;font-weight:500;min-height:16px}
+
+  /* STATUS COLORS */
+  .hdr-waiting  {background:#FF8F00;color:#fff}
+  .hdr-making   {background:#1565C0;color:#fff}
+  .hdr-ready    {background:#2E7D32;color:#fff}
+  .hdr-paid     {background:#6A1B9A;color:#fff}
+  .hdr-completed{background:#616161;color:#fff}
+  .s-waiting{background:#FFF3E0;color:#E65100;border-color:#FFCC80}
+  .s-making {background:#E3F2FD;color:#1565C0;border-color:#90CAF9}
+  .s-ready  {background:#E8F5E9;color:#2E7D32;border-color:#A5D6A7}
+  .s-paid   {background:#F3E5F5;color:#6A1B9A;border-color:#CE93D8}
+  .s-completed{background:#F5F5F5;color:#757575;border-color:#E0E0E0}
+
+  /* STATS */
+  .stats{display:flex;border-bottom:0.5px solid var(--border);background:var(--surface-1)}
+  .stat{flex:1;padding:8px;text-align:center;cursor:pointer;border-right:0.5px solid var(--border)}
+  .stat:last-child{border-right:none}
+  .stat-n{font-size:18px;font-weight:500}
+  .stat-l{font-size:10px;color:var(--text-muted);margin-top:1px}
+
+  .fbar{display:flex;gap:5px;padding:8px 12px;border-bottom:0.5px solid var(--border);background:var(--surface-1);flex-wrap:wrap}
+  .chip{padding:3px 10px;font-size:11px;border-radius:20px;border:0.5px solid var(--border);background:var(--surface-2);color:var(--text-secondary);cursor:pointer}
+  .chip.on{font-weight:500}
+  .chip-w.on{background:#FFF3E0;color:#E65100;border-color:#FFCC80}
+  .chip-m.on{background:#E3F2FD;color:#1565C0;border-color:#90CAF9}
+  .chip-r.on{background:#E8F5E9;color:#2E7D32;border-color:#A5D6A7}
+  .chip-a.on{background:#EDE7F6;color:#6A1B9A;border-color:#CE93D8}
+  .chip-d.on{background:#F5F5F5;color:#757575;border-color:#bbb}
+  .chip-all.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;padding:12px}
+  .card{background:var(--surface-2);border-radius:12px;border:0.5px solid var(--border);overflow:hidden}
+  .card-hdr{padding:10px 12px;display:flex;justify-content:space-between;align-items:center}
+  .card-hdr-id{font-size:13px;font-weight:500}
+  .card-hdr-name{font-size:11px;opacity:.85;margin-top:1px}
+  .card-body{padding:8px 12px;border-top:0.5px solid rgba(0,0,0,.08)}
+  .card-item{display:flex;justify-content:space-between;font-size:12px;padding:2px 0}
+  .card-footer{padding:8px 12px;border-top:0.5px solid var(--border)}
+  .timer{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;margin-bottom:5px}
+  .prog{height:3px;background:var(--surface-0);border-radius:2px;overflow:hidden;margin-bottom:7px}
+  .prog-fill{height:100%;border-radius:2px;transition:width .3s}
+  .acts{display:flex;gap:5px}
+  .abtn{flex:1;padding:5px 0;font-size:11px;font-weight:500;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:transparent;color:var(--text-primary);cursor:pointer;transition:all .15s}
+  .abtn:hover{background:var(--surface-1)}
+  .abtn.accent{border-color:var(--border-accent);color:var(--text-accent)}
+  .abtn.accent:hover{background:var(--bg-accent)}
+
+  /* ADMIN SETTINGS SECTION */
+  .settings-section{padding:12px 16px;border-bottom:0.5px solid var(--border);background:var(--surface-1)}
+  .settings-section h3{font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .settings-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .settings-row:last-child{margin-bottom:0}
+  .upload-label{display:flex;align-items:center;gap:6px;padding:6px 12px;border:0.5px dashed var(--border-strong);border-radius:var(--radius);cursor:pointer;font-size:12px;color:var(--text-secondary);background:var(--surface-2)}
+  .upload-label:hover{background:var(--surface-0)}
+  .preview-thumb{height:44px;border-radius:6px;border:0.5px solid var(--border);display:none;object-fit:contain;max-width:80px}
+  .upload-note{font-size:11px;color:var(--text-muted)}
+  .divider-label{font-size:11px;color:var(--text-muted);font-weight:500;padding:6px 0 4px;border-top:0.5px solid var(--border);margin-top:4px}
+  .lock-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;font-size:12px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:var(--surface-2);color:var(--text-secondary);cursor:pointer}
+  .lock-btn:hover{background:var(--surface-0);color:#E24B4A;border-color:#E24B4A}
+
+  /* NEW INPUT STYLES FOR CUSTOMER */
+  .cust-input-group{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+  .cust-input{width:100%;padding:10px 12px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:var(--surface-2);color:var(--text-primary);font-family:inherit;font-size:13px;transition:border-color .15s}
+  .cust-input:focus{outline:none;border-color:var(--border-accent)}
+
+  /* ADMIN MENU EDITOR LIST */
+  .admin-menu-row{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:6px;background:var(--surface-0);border:0.5px solid var(--border);margin-bottom:4px}
+  .admin-menu-details{font-size:12px;font-weight:500;color:var(--text-primary)}
+  .admin-menu-price{color:var(--text-muted);font-weight:400;margin-left:6px}
+  .admin-menu-actions{display:flex;gap:4px}
+  .icon-btn{background:transparent;border:none;cursor:pointer;font-size:13px;color:var(--text-secondary);padding:2px 4px;display:flex;align-items:center;justify-content:center}
+  .icon-btn:hover{color:var(--text-accent)}
+  .icon-btn.danger:hover{color:#E24B4A}
+
+  /* CUSTOMER */
+  .page{display:none}
+  .page.active{display:block}
+  .menu-hero{background:var(--surface-1);text-align:center}
+  #menu-display{width:100%;display:block;max-height:420px;object-fit:contain;background:#fafafa}
+  .menu-placeholder{padding:50px 20px;text-align:center;color:var(--text-muted);font-size:13px}
+  .order-panel{padding:14px}
+  .order-panel h3{font-size:14px;font-weight:500;margin-bottom:10px}
+  .menu-items{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  .menu-item-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface-2);border-radius:var(--radius);border:0.5px solid var(--border)}
+  .mi-name{flex:1;font-size:13px;font-weight:500}
+  .mi-price{font-size:12px;color:var(--text-secondary);min-width:50px;text-align:right}
+  .mi-qty{display:flex;align-items:center;gap:6px}
+  .qty-btn{width:24px;height:24px;border-radius:6px;border:0.5px solid var(--border-strong);background:var(--surface-1);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
+  .qty-btn:hover{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+  .qty-num{font-size:13px;font-weight:500;min-width:16px;text-align:center}
+  .order-summary{background:var(--surface-1);border-radius:var(--radius);border:0.5px solid var(--border);padding:10px 12px;margin-bottom:10px}
+  .os-row{display:flex;justify-content:space-between;font-size:12px;padding:2px 0}
+  .os-total{display:flex;justify-content:space-between;font-size:14px;font-weight:500;padding-top:6px;margin-top:4px;border-top:0.5px solid var(--border)}
+  .confirm-btn{width:100%;padding:11px;font-size:14px;font-weight:500;border-radius:var(--radius);border:none;background:#FF8F00;color:#fff;cursor:pointer}
+  .confirm-btn:hover{background:#E65100}
+  .confirm-btn:disabled{background:var(--border-strong);color:var(--text-muted);cursor:default}
+
+  /* TICKET */
+  .ticket-page{padding:14px;max-width:380px;margin:0 auto}
+  .ticket-card{border-radius:12px;overflow:hidden;border:0.5px solid var(--border)}
+  .ticket-hdr{padding:14px 16px;text-align:center}
+  .ticket-hdr .tid{font-size:22px;font-weight:500}
+  .ticket-hdr .ttype{font-size:12px;opacity:.85;margin-top:2px}
+  .ticket-status-block{padding:14px;text-align:center}
+  .status-icon{font-size:34px;margin-bottom:5px}
+  .status-label{font-size:16px;font-weight:500}
+  .status-sub{font-size:12px;margin-top:3px;opacity:.85}
+  .ticket-items{padding:10px 14px;border-top:0.5px solid var(--border);background:var(--surface-2)}
+  .trow{display:flex;justify-content:space-between;font-size:12px;padding:2px 0}
+  .ttotal{display:flex;justify-content:space-between;font-size:13px;font-weight:500;padding-top:6px;margin-top:4px;border-top:0.5px solid var(--border)}
+  .ticket-tl{padding:10px 14px;border-top:0.5px solid var(--border);background:var(--surface-1)}
+  .tl-row{display:flex;align-items:flex-start;gap:8px;padding:3px 0}
+  .tl-dot{width:8px;height:8px;border-radius:50%;margin-top:3px;flex-shrink:0}
+  .tl-dot.done{background:#2E7D32}
+  .tl-dot.act{background:#1565C0}
+  .tl-dot.pend{background:var(--border-strong)}
+  .tl-lbl{font-size:12px}
+  .tl-time{font-size:11px;color:var(--text-muted)}
+  .refresh-note{text-align:center;font-size:11px;color:var(--text-muted);margin-top:8px;display:flex;align-items:center;justify-content:center;gap:4px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spin-icon{animation:spin 2s linear infinite;display:inline-block}
+
+  /* QR BLOCK */
+  .qr-block{padding:14px 16px;border-top:0.5px solid var(--border);text-align:center;background:var(--surface-2)}
+  .qr-title{font-size:13px;font-weight:500;margin-bottom:10px;color:var(--text-primary)}
+  .qr-img-wrap{display:flex;justify-content:center;margin-bottom:10px}
+  .qr-img-wrap img{width:160px;height:160px;object-fit:contain;border-radius:8px;border:0.5px solid var(--border)}
+  .qr-fallback-canvas{display:flex;justify-content:center;margin-bottom:10px}
+  .paid-btn{width:100%;padding:10px;font-size:13px;font-weight:500;background:#6A1B9A;color:#fff;border:none;border-radius:var(--radius);cursor:pointer}
+  .paid-btn:hover{background:#4A148C}
+  .new-order-lnk{display:block;text-align:center;margin-top:10px;font-size:12px;color:var(--text-accent);cursor:pointer;text-decoration:underline}
+  .empty{padding:40px;text-align:center;color:var(--text-muted);font-size:13px}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .pulse{animation:pulse 1.5s infinite}
+  </style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <i class="ti ti-coffee" style="font-size:17px;color:#FF8F00" aria-hidden="true"></i>
+    La Dolce
+    <span class="logo-sub">/ Takeaway</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span id="new-badge" style="display:none;font-size:11px;font-weight:500;color:var(--text-accent);background:var(--bg-accent);border:0.5px solid var(--border-accent);padding:3px 8px;border-radius:20px">
+      <i class="ti ti-bell" aria-hidden="true"></i> New order!
+    </span>
+    <div class="view-toggle">
+      <button class="vbtn on" id="btn-admin" onclick="tryGoAdmin()"><i class="ti ti-layout-dashboard" aria-hidden="true"></i> Admin</button>
+      <button class="vbtn" id="btn-cust" onclick="goView('customer')"><i class="ti ti-user" aria-hidden="true"></i> Customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PIN SCREEN ===== -->
+<div id="pin-screen" style="display:none">
+  <div class="pin-screen">
+    <div style="text-align:center">
+      <i class="ti ti-lock" style="font-size:32px;color:#FF8F00;display:block;margin-bottom:8px" aria-hidden="true"></i>
+      <div class="pin-title">Admin PIN</div>
+      <div class="pin-sub">Enter 4-digit PIN to continue</div>
+    </div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot" id="d0"></div>
+      <div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div>
+      <div class="pin-dot" id="d3"></div>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+    <div class="pin-pad">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key" onclick="pinCancel()" style="font-size:12px;color:var(--text-muted)">Cancel</button>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key del" onclick="pinDel()"><i class="ti ti-backspace" aria-hidden="true"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN VIEW ===== -->
+<div id="admin-view" style="display:none">
+
+  <!-- Settings: menu upload + QR upload -->
+  <div class="settings-section">
+    <h3><i class="ti ti-settings" aria-hidden="true"></i> Admin settings</h3>
+
+    <div class="settings-row">
+      <label class="upload-label">
+        <i class="ti ti-photo" aria-hidden="true"></i> Upload menu image
+        <input type="file" accept="image/*" style="display:none" onchange="handleMenuUpload(event)">
+      </label>
+      <img class="preview-thumb" id="menu-thumb" alt="menu preview">
+      <span class="upload-note" id="menu-note">No image yet</span>
+    </div>
+
+    <div class="divider-label"><i class="ti ti-qrcode" aria-hidden="true"></i> PromptPay QR for customer payment</div>
+    <div class="settings-row">
+      <label class="upload-label">
+        <i class="ti ti-qrcode" aria-hidden="true"></i> Upload QR image
+        <input type="file" accept="image/*" style="display:none" onchange="handleQRUpload(event)">
+      </label>
+      <img class="preview-thumb" id="qr-thumb" alt="QR preview">
+      <span class="upload-note" id="qr-note">No QR yet — customers will see a placeholder</span>
+    </div>
+
+    <!-- DRINK MENU CRUD SECTION -->
+    <div class="divider-label"><i class="ti ti-cup" aria-hidden="true"></i> Manage Drink Menu (ຈັດການເມນູ)</div>
+    <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px; background:var(--surface-2); padding:10px; border-radius:8px; border:0.5px solid var(--border)">
+      <div style="font-size:11px; font-weight:500; color:var(--text-secondary)" id="form-title">Add New Drink</div>
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="menu-item-name" placeholder="Drink name (e.g. Latte)" class="cust-input" style="flex:2">
+        <input type="number" id="menu-item-price" placeholder="Price" class="cust-input" style="flex:1">
+      </div>
+      <div style="display:flex; gap:6px; justify-content:flex-end;">
+        <button class="abtn" id="btn-cancel-edit" onclick="cancelEditMenu()" style="display:none; max-width:80px;">Cancel</button>
+        <button class="abtn accent" id="btn-save-menu" onclick="saveMenuItem()" style="max-width:100px;">Save Drink</button>
+      </div>
+    </div>
+    
+    <div id="admin-menu-list" style="max-height:160px; overflow-y:auto; background:var(--surface-2); border-radius:8px; border:0.5px solid var(--border); padding:6px; display:flex; flex-direction:column; gap:4px">
+      <!-- Generated dynamically -->
+    </div>
+
+    <div class="settings-row" style="margin-top:12px">
+      <button class="lock-btn" onclick="lockAdmin()">
+        <i class="ti ti-lock" aria-hidden="true"></i> Lock admin
+      </button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-n" style="color:var(--text-primary)" id="cn-all">0</div><div class="stat-l">Active</div></div>
+    <div class="stat"><div class="stat-n" style="color:#E65100" id="cn-w">0</div><div class="stat-l">Waiting</div></div>
+    <div class="stat"><div class="stat-n" style="color:#1565C0" id="cn-m">0</div><div class="stat-l">Making</div></div>
+    <div class="stat"><div class="stat-n" style="color:#2E7D32" id="cn-r">0</div><div class="stat-l">Ready</div></div>
+    <div class="stat"><div class="stat-n" style="color:#6A1B9A" id="cn-p">0</div><div class="stat-l">Paid</div></div>
+  </div>
+
+  <div class="fbar">
+    <span class="chip chip-all on" id="chip-all" onclick="setF('all')">All</span>
+    <span class="chip chip-w" id="chip-waiting" onclick="setF('waiting')">Waiting</span>
+    <span class="chip chip-m" id="chip-making" onclick="setF('making')">Making</span>
+    <span class="chip chip-r" id="chip-ready" onclick="setF('ready')">Ready</span>
+    <span class="chip chip-a" id="chip-paid" onclick="setF('paid')">Paid</span>
+    <span class="chip chip-d" id="chip-completed" onclick="setF('completed')">Done</span>
+  </div>
+
+  <div class="grid" id="admin-grid"></div>
+</div>
+
+<!-- ===== CUSTOMER VIEW ===== -->
+<div id="customer-view" style="display:none">
+  <div class="page active" id="page-menu">
+    <div class="menu-hero">
+      <img id="menu-display" alt="La Dolce menu" style="display:none">
+      <div class="menu-placeholder" id="menu-placeholder">
+        <i class="ti ti-photo-off" style="font-size:30px;display:block;margin-bottom:8px" aria-hidden="true"></i>
+        Menu image will appear once admin uploads it
+      </div>
+    </div>
+    
+    <div class="order-panel">
+      <h3>Place your order</h3>
+      
+      <!-- Input for Customer details -->
+      <div class="cust-input-group">
+        <input type="text" id="cust-name" placeholder="ຊື່ຂອງທ່ານ / Name" class="cust-input" oninput="validateOrder()">
+        <input type="tel" id="cust-phone" placeholder="ເບີຕິດຕໍ່ / Contact Number" class="cust-input" oninput="validateOrder()">
+      </div>
+
+      <div class="menu-items" id="menu-items-list"></div>
+      
+      <div class="order-summary" id="order-summary-box" style="display:none">
+        <div id="os-lines"></div>
+        <div class="os-total"><span>Total</span><span id="os-total-val">฿0</span></div>
+      </div>
+      <button class="confirm-btn" id="confirm-btn" onclick="placeOrder()" disabled>Confirm order</button>
+    </div>
+  </div>
+
+  <div class="page" id="page-ticket">
+    <div class="ticket-page" id="ticket-inner"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// Firebase Configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyD6vBXduQDmDreOGra1alNZF2jnoUIYqJM",
+  authDomain: "la-dolce-menu-1a3c8.firebaseapp.com",
+  projectId: "la-dolce-menu-1a3c8",
+  storageBucket: "la-dolce-menu-1a3c8.firebasestorage.app",
+  messagingSenderId: "936747598617",
+  appId: "1:936747598617:web:08a33aca4b505df7dafb88",
+  measurementId: "G-VL8CHGGPPW"
+};
+
+// Initialize Firebase compat
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const CORRECT_PIN = '7788';
+const DEFAULT_SEED_MENU = [
+  {name:'Coconut Coffee',price:85},
+  {name:'Matcha Latte',price:90},
+  {name:'Espresso',price:65},
+  {name:'Cold Brew',price:95},
+  {name:'Caramel Macchiato',price:100},
+  {name:'Croissant',price:55},
+];
+
+let MENU = [];
+let orders = [];
+let currentFilter = 'all';
+let myTicketId = null;
+let menuDataUrl = null;
+let qrDataUrl = null;
+let cart = {};
+let pinBuffer = '';
+let adminUnlocked = false;
+let editMenuId = null;
+
+/* ---- CORE DATABASE SYNC ---- */
+// Listen for global settings (Menu & QR Image)
+db.collection('settings').doc('config').onSnapshot(doc => {
+  if (doc.exists) {
+    const data = doc.data();
+    if (data.menuDataUrl) {
+      menuDataUrl = data.menuDataUrl;
+      const t = document.getElementById('menu-thumb');
+      if (t) { t.src = menuDataUrl; t.style.display = 'block'; }
+      const d = document.getElementById('menu-display');
+      if (d) { d.src = menuDataUrl; d.style.display = 'block'; }
+      const placeholder = document.getElementById('menu-placeholder');
+      if (placeholder) placeholder.style.display = 'none';
+    }
+    if (data.qrDataUrl) {
+      qrDataUrl = data.qrDataUrl;
+      const q = document.getElementById('qr-thumb');
+      if (q) { q.src = qrDataUrl; q.style.display = 'block'; }
+      const qrNote = document.getElementById('qr-note');
+      if (qrNote) qrNote.textContent = 'QR image loaded and ready';
+    }
+  }
+});
+
+// Listen for Menu items
+db.collection('menu').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
+  if (snapshot.empty) {
+    seedMenuIfEmpty();
+    return;
+  }
+  const items = [];
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    items.push({ id: doc.id, name: data.name, price: Number(data.price) });
+  });
+  MENU = items;
+  renderMenu();
+  renderAdminMenuList();
+});
+
+// Listen for Orders
+db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+  if (snapshot.empty) {
+    seedOrdersIfEmpty();
+    return;
+  }
+  const list = [];
+  snapshot.forEach(doc => {
+    list.push({
+      id: doc.id,
+      ...doc.data()
+    });
+  });
+  orders = list;
+  renderAdmin();
+  updateCounts();
+  if (myTicketId) {
+    renderTicket(myTicketId);
+  }
+});
+
+// Seeds
+function seedMenuIfEmpty() {
+  const batch = db.batch();
+  DEFAULT_SEED_MENU.forEach((m, idx) => {
+    const docRef = db.collection('menu').doc();
+    batch.set(docRef, {
+      name: m.name,
+      price: m.price,
+      createdAt: Date.now() + idx
+    });
+  });
+  batch.commit();
+}
+
+function seedOrdersIfEmpty() {
+  const demos = [
+    {items:[{name:'Coconut Coffee',qty:1,price:85},{name:'Matcha Latte',qty:1,price:90}],status:'making',ago:8, customerName: 'ສົມສັກ (Somsack)', customerPhone: '020 5555 1234'},
+    {items:[{name:'Espresso',qty:2,price:65}],status:'waiting',ago:3, customerName: 'ແກ້ວ (Keo)', customerPhone: '020 7777 5678'},
+    {items:[{name:'Cold Brew',qty:1,price:95},{name:'Croissant',qty:1,price:55}],status:'ready',ago:20, customerName: 'ນ້ອຍ (Noy)', customerPhone: '020 9999 8888'},
+  ];
+  demos.forEach((d, idx) => {
+    const ticketId = '#' + (1001 + idx);
+    const nowFmt = fmt(new Date(Date.now() - d.ago * 60000));
+    const total = d.items.reduce((s,i)=>s+i.qty*i.price,0);
+    const tl = [
+      {label:'Order placed',time:fmt(new Date(Date.now()-d.ago*60000)),done:true},
+      {label:'Barista accepted',time:d.status!=='waiting'?fmt(new Date(Date.now()-(d.ago-1)*60000)):null,done:d.status!=='waiting'},
+      {label:'Making drink',time:d.status==='ready'?fmt(new Date(Date.now()-15*60000)):null,done:d.status==='ready',active:d.status==='making'},
+      {label:'Ready for pickup',time:d.status==='ready'?fmt(new Date(Date.now()-5*60000)):null,done:d.status==='ready'},
+    ];
+    db.collection('orders').doc(ticketId).set({
+      id: ticketId,
+      status: d.status,
+      type: 'Take Away',
+      customerName: d.customerName,
+      customerPhone: d.customerPhone,
+      items: d.items,
+      total,
+      createdAt: nowFmt,
+      elapsed: d.ago,
+      maxTime: 12,
+      timeline: tl,
+      timestamp: Date.now() - d.ago * 60000
+    });
+  });
+}
+
+/* ---- PIN ---- */
+function tryGoAdmin(){
+  if(adminUnlocked){ showAdminView(); return; }
+  showPinScreen();
+}
+function showPinScreen(){
+  hide('admin-view'); hide('customer-view');
+  show('pin-screen');
+  setBtnOn('btn-admin');
+  pinBuffer = '';
+  updatePinDots();
+  document.getElementById('pin-error').textContent = '';
+}
+function pinKey(d){
+  if(pinBuffer.length >= 4) return;
+  pinBuffer += d;
+  updatePinDots();
+  if(pinBuffer.length === 4) setTimeout(checkPin, 120);
+}
+function pinDel(){
+  pinBuffer = pinBuffer.slice(0,-1);
+  updatePinDots();
+  document.getElementById('pin-error').textContent = '';
+}
+function pinCancel(){
+  goView('customer');
+}
+function updatePinDots(){
+  for(let i=0;i<4;i++){
+    document.getElementById('d'+i).classList.toggle('filled', i < pinBuffer.length);
+  }
+}
+function checkPin(){
+  if(pinBuffer === CORRECT_PIN){
+    adminUnlocked = true;
+    hide('pin-screen');
+    showAdminView();
+  } else {
+    document.getElementById('pin-error').textContent = 'Wrong PIN, try again';
+    pinBuffer = '';
+    updatePinDots();
+    const dots = document.getElementById('pin-dots');
+    dots.style.transform = 'translateX(6px)';
+    setTimeout(()=>dots.style.transform='translateX(-6px)',80);
+    setTimeout(()=>dots.style.transform='',160);
+  }
+}
+function lockAdmin(){
+  adminUnlocked = false;
+  goView('customer');
+}
+function showAdminView(){
+  hide('pin-screen'); hide('customer-view');
+  show('admin-view');
+  setBtnOn('btn-admin');
+}
+
+/* ---- IMAGE COMPRESSION & UPLOADS ---- */
+function compressImage(base64Str, maxWidth, maxHeight, callback) {
+  const img = new Image();
+  img.src = base64Str;
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    let width = img.width;
+    let height = img.height;
+    if (width > height) {
+      if (width > maxWidth) {
+        height *= maxWidth / width;
+        width = maxWidth;
+      }
+    } else {
+      if (height > maxHeight) {
+        width *= maxHeight / height;
+        height = maxHeight;
+      }
+    }
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, width, height);
+    callback(canvas.toDataURL('image/jpeg', 0.7));
+  };
+}
+
+function handleMenuUpload(e){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    compressImage(ev.target.result, 800, 800, (compressed) => {
+      db.collection('settings').doc('config').set({ menuDataUrl: compressed }, { merge: true });
+    });
+  };
+  r.readAsDataURL(f);
+}
+function handleQRUpload(e){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    compressImage(ev.target.result, 500, 500, (compressed) => {
+      db.collection('settings').doc('config').set({ qrDataUrl: compressed }, { merge: true });
+    });
+  };
+  r.readAsDataURL(f);
+}
+
+/* ---- DRINK MENU CRUD ACTIONS ---- */
+function renderAdminMenuList() {
+  const container = document.getElementById('admin-menu-list');
+  if (!container) return;
+  if (!MENU.length) {
+    container.innerHTML = '<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:10px">No menu items.</div>';
+    return;
+  }
+  container.innerHTML = MENU.map(m => `
+    <div class="admin-menu-row">
+      <div class="admin-menu-details">
+        ${m.name} <span class="admin-menu-price">฿${m.price}</span>
+      </div>
+      <div class="admin-menu-actions">
+        <button class="icon-btn" onclick="editMenuItem('${m.id}')" title="Edit"><i class="ti ti-edit" aria-hidden="true"></i></button>
+        <button class="icon-btn danger" onclick="deleteMenuItem('${m.id}')" title="Delete"><i class="ti ti-trash" aria-hidden="true"></i></button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function editMenuItem(id) {
+  const item = MENU.find(m => m.id === id);
+  if (!item) return;
+  editMenuId = id;
+  document.getElementById('form-title').textContent = 'Edit Drink: ' + item.name;
+  document.getElementById('menu-item-name').value = item.name;
+  document.getElementById('menu-item-price').value = item.price;
+  document.getElementById('btn-cancel-edit').style.display = 'inline-block';
+  document.getElementById('btn-save-menu').textContent = 'Update';
+}
+
+function cancelEditMenu() {
+  editMenuId = null;
+  document.getElementById('form-title').textContent = 'Add New Drink';
+  document.getElementById('menu-item-name').value = '';
+  document.getElementById('menu-item-price').value = '';
+  document.getElementById('btn-cancel-edit').style.display = 'none';
+  document.getElementById('btn-save-menu').textContent = 'Save Drink';
+}
+
+function saveMenuItem() {
+  const name = document.getElementById('menu-item-name').value.trim();
+  const price = document.getElementById('menu-item-price').value.trim();
+  if (!name || !price) return;
+  
+  if (editMenuId) {
+    db.collection('menu').doc(editMenuId).update({
+      name: name,
+      price: Number(price)
+    }).then(() => cancelEditMenu());
+  } else {
+    db.collection('menu').add({
+      name: name,
+      price: Number(price),
+      createdAt: Date.now()
+    }).then(() => cancelEditMenu());
+  }
+}
+
+function deleteMenuItem(id) {
+  if (confirm('Are you sure you want to delete this drink?')) {
+    db.collection('menu').doc(id).delete();
+  }
+}
+
+/* ---- CART ---- */
+function updateQty(id, delta){
+  cart[id] = Math.max(0,(cart[id]||0)+delta);
+  renderMenu();
+}
+
+function validateOrder() {
+  const name = document.getElementById('cust-name').value.trim();
+  const phone = document.getElementById('cust-phone').value.trim();
+  const hasItems = Object.values(cart).some(q => q > 0);
+  document.getElementById('confirm-btn').disabled = !(name && phone && hasItems);
+}
+
+function renderMenu(){
+  document.getElementById('menu-items-list').innerHTML = MENU.map(m=>`
+  <div class="menu-item-row">
+    <div class="mi-name">${m.name}</div>
+    <div class="mi-price">฿${m.price}</div>
+    <div class="mi-qty">
+      <button class="qty-btn" onclick="updateQty('${m.id}',-1)">−</button>
+      <span class="qty-num">${cart[m.id]||0}</span>
+      <button class="qty-btn" onclick="updateQty('${m.id}',1)">+</button>
+    </div>
+  </div>`).join('');
+  const lines = MENU.filter(m=>(cart[m.id]||0)>0);
+  const total = lines.reduce((s,m)=>s+cart[m.id]*m.price,0);
+  const sb = document.getElementById('order-summary-box');
+  if(lines.length){
+    sb.style.display='';
+    document.getElementById('os-lines').innerHTML = lines.map(m=>`<div class="os-row"><span>${m.name} ×${cart[m.id]}</span><span>฿${m.price*cart[m.id]}</span></div>`).join('');
+    document.getElementById('os-total-val').textContent = '฿'+total;
+  } else { sb.style.display='none'; }
+  validateOrder();
+}
+
+/* ---- PLACE ORDER ---- */
+function placeOrder(){
+  const customerName = document.getElementById('cust-name').value.trim();
+  const customerPhone = document.getElementById('cust-phone').value.trim();
+  if (!customerName || !customerPhone) return;
+
+  const items = MENU.filter(m=>(cart[m.id]||0)>0).map(m=>({name:m.name,qty:cart[m.id],price:m.price}));
+  if(!items.length) return;
+
+  const ticketId = '#' + Math.floor(1000 + Math.random() * 9000);
+  const now = fmt(new Date());
+  const total = items.reduce((s,i)=>s+i.qty*i.price,0);
+
+  const newOrder = {
+    id: ticketId,
+    status: 'waiting',
+    type: 'Take Away',
+    customerName: customerName,
+    customerPhone: customerPhone,
+    items: items,
+    total: total,
+    createdAt: now,
+    elapsed: 0,
+    maxTime: 12,
+    timestamp: Date.now(),
+    timeline: [
+      {label:'Order placed',time:now,done:true},
+      {label:'Barista accepted',time:null,done:false},
+      {label:'Making drink',time:null,done:false,active:false},
+      {label:'Ready for pickup',time:null,done:false},
+    ]
+  };
+
+  db.collection('orders').doc(ticketId).set(newOrder).then(() => {
+    myTicketId = ticketId;
+    cart = {};
+    document.getElementById('cust-name').value = '';
+    document.getElementById('cust-phone').value = '';
+    
+    const nb = document.getElementById('new-badge');
+    if (nb) {
+      nb.style.display=''; 
+      setTimeout(()=>nb.style.display='none',4000);
+    }
+    showTicketPage(ticketId);
+  });
+}
+
+/* ---- TICKET ---- */
+function showTicketPage(id){ goPage('ticket'); renderTicket(id); }
+function renderTicket(id){
+  const o = orders.find(x=>x.id===id);
+  const el = document.getElementById('ticket-inner');
+  if(!o){ el.innerHTML='<div class="empty">Ticket not found</div>'; return; }
+  const hdr = 'hdr-'+o.status;
+  const icon = {waiting:'🟡',making:'☕',ready:'🎉',paid:'✅',completed:'✅'}[o.status]||'•';
+  const ahead = orders.filter(x=>(x.status==='waiting'||x.status==='making')&&x.id!==id).length;
+  const msg = {
+    waiting:`Waiting · ${ahead} order${ahead!==1?'s':''} ahead`,
+    making:'Your order is being prepared ☕',
+    ready:'Your order is ready! Please pay below.',
+    paid:'Payment received — enjoy your drink!',
+    completed:'Order completed'
+  }[o.status]||'';
+
+  const itemsHtml = o.items.map(i=>`<div class="trow"><span>${i.name} ×${i.qty}</span><span>฿${i.qty*i.price}</span></div>`).join('');
+  const tlHtml = o.timeline.map(t=>`
+  <div class="tl-row">
+    <div class="tl-dot ${t.done?'done':(t.active?'act':'pend')}"></div>
+    <div>
+      <div class="tl-lbl" style="${!t.done&&!t.active?'color:var(--text-muted)':''}">${t.label}</div>
+      ${t.time?`<div class="tl-time">${t.time}</div>`:''}
+    </div>
+  </div>`).join('');
+
+  let qrHtml = '';
+  if(o.status === 'ready'){
+    if(qrDataUrl){
+      qrHtml = `<div class="qr-block">
+        <div class="qr-title"><i class="ti ti-qrcode" aria-hidden="true"></i> Scan to pay · Total ฿${o.total}</div>
+        <div class="qr-img-wrap"><img src="${qrDataUrl}" alt="PromptPay QR"></div>
+        <button class="paid-btn" onclick="markPaid('${id}')">I've paid already ✓</button>
+      </div>`;
+    } else {
+      qrHtml = `<div class="qr-block">
+        <div class="qr-title"><i class="ti ti-qrcode" aria-hidden="true"></i> Total ฿${o.total}</div>
+        <div style="padding:20px 0;color:var(--text-muted);font-size:12px">
+          <i class="ti ti-qrcode" style="font-size:40px;display:block;margin-bottom:6px;opacity:.3" aria-hidden="true"></i>
+          QR not uploaded yet — ask admin to upload PromptPay QR
+        </div>
+        <button class="paid-btn" onclick="markPaid('${id}')">I've paid already ✓</button>
+      </div>`;
+    }
+  }
+
+  el.innerHTML = `
+  <div class="ticket-card">
+    <div class="ticket-hdr ${hdr}">
+      <div class="tid">${o.id}</div>
+      <div class="ttype">${o.type} · ${o.createdAt}</div>
+      <div style="font-size:12px; margin-top:6px; font-weight:500;">
+        <i class="ti ti-user" aria-hidden="true"></i> ${o.customerName || 'N/A'} · <i class="ti ti-phone" aria-hidden="true"></i> ${o.customerPhone || 'N/A'}
+      </div>
+    </div>
+    <div class="ticket-status-block ${hdr}" style="border-top:0.5px solid rgba(255,255,255,.2)">
+      <div class="status-icon">${icon}</div>
+      <div class="status-label">${capitalize(o.status)}</div>
+      <div class="status-sub">${msg}</div>
+    </div>
+    <div class="ticket-items">
+      ${itemsHtml}
+      <div class="ttotal"><span>Total</span><span>฿${o.total}</span></div>
+    </div>
+    <div class="ticket-tl">${tlHtml}</div>
+    ${qrHtml}
+  </div>
+  <div class="refresh-note"><span class="spin-icon"><i class="ti ti-refresh" aria-hidden="true"></i></span> Live synchronized via Firebase</div>
+  <span class="new-order-lnk" onclick="startNewOrder()">← Order something else</span>`;
+}
+
+function markPaid(id){
+  db.collection('orders').doc(id).update({
+    status: 'paid'
+  });
+}
+
+/* ---- ADMIN ADVANCE ---- */
+function advance(id){
+  const o = orders.find(x=>x.id===id); if(!o) return;
+  const map = {waiting:'making',making:'ready',ready:'completed'};
+  if(!map[o.status]) return;
+  const now = fmt(new Date());
+  const nextStatus = map[o.status];
+  const tl = JSON.parse(JSON.stringify(o.timeline));
+  
+  if(nextStatus==='making'){ tl[1].done=true; tl[1].time=now; tl[2].active=true; }
+  if(nextStatus==='ready'){  tl[2].done=true; tl[2].active=false; tl[2].time=now; tl[3].done=true; tl[3].time=now; }
+  
+  db.collection('orders').doc(id).update({
+    status: nextStatus,
+    timeline: tl
+  });
+}
+function viewCust(id){ myTicketId=id; goView('customer'); showTicketPage(id); }
+
+function getElapsed(o) {
+  if (!o.timestamp) return o.elapsed || 0;
+  return Math.floor((Date.now() - o.timestamp) / 60000);
+}
+
+function renderAdmin(){
+  const grid = document.getElementById('admin-grid');
+  const list = currentFilter==='all'
+    ? orders.filter(o=>o.status!=='completed')
+    : orders.filter(o=>o.status===currentFilter);
+  if(!list.length){ grid.innerHTML='<div class="empty">No tickets here</div>'; return; }
+  grid.innerHTML = list.map(o=>{
+    const hdr = 'hdr-'+o.status;
+    const nextLabel = {waiting:'Start making',making:'Mark ready',ready:'Mark done'}[o.status];
+    const elapsed = getElapsed(o);
+    const over = o.status==='making' && elapsed > o.maxTime;
+    const pct = ['ready','paid','completed'].includes(o.status)?100:Math.min(100,Math.round(elapsed/o.maxTime*100));
+    const pCol = o.status==='ready'?'#2E7D32':over?'#E24B4A':pct>70?'#E65100':'#1565C0';
+    return `<div class="card">
+      <div class="card-hdr ${hdr}">
+        <div>
+          <div class="card-hdr-id">${o.id}</div>
+          <div class="card-hdr-name">${o.type} · ${o.createdAt}</div>
+          <div style="font-size:11px; font-weight:500; margin-top:2px;">
+            <i class="ti ti-user" aria-hidden="true"></i> ${o.customerName || 'Customer'} (${o.customerPhone || ''})
+          </div>
+        </div>
+        <i class="ti ti-coffee" style="font-size:18px;opacity:.75" aria-hidden="true"></i>
+      </div>
+      <div class="card-body">
+        ${o.items.map(i=>`<div class="card-item"><span>${i.name}</span><span style="color:var(--text-muted);font-weight:500">×${i.qty}</span></div>`).join('')}
+        <div style="font-size:11px;font-weight:500;color:var(--text-secondary);margin-top:4px;border-top:0.5px solid var(--border);padding-top:4px">฿${o.total}</div>
+      </div>
+      <div class="card-footer">
+        <div class="timer"><i class="ti ti-clock" style="font-size:12px" aria-hidden="true"></i><span style="${over?'color:#E24B4A':''}">${timerTxt(o)}</span></div>
+        <div class="prog"><div class="prog-fill" style="width:${pct}%;background:${pCol}"></div></div>
+        <div class="acts">
+          ${nextLabel?`<button class="abtn accent" onclick="advance('${o.id}')">${nextLabel}</button>`:''}
+          <button class="abtn" onclick="viewCust('${o.id}')"><i class="ti ti-eye" style="font-size:12px" aria-hidden="true"></i></button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateCounts(){
+  document.getElementById('cn-all').textContent = orders.filter(o=>o.status!=='completed').length;
+  document.getElementById('cn-w').textContent   = orders.filter(o=>o.status==='waiting').length;
+  document.getElementById('cn-m').textContent   = orders.filter(o=>o.status==='making').length;
+  document.getElementById('cn-r').textContent   = orders.filter(o=>o.status==='ready').length;
+  document.getElementById('cn-p').textContent   = orders.filter(o=>o.status==='paid').length;
+}
+function setF(f){
+  currentFilter=f;
+  ['all','waiting','making','ready','paid','completed'].forEach(k=>{
+    const c=document.getElementById('chip-'+k); if(c) c.classList.toggle('on',k===f);
+  });
+  renderAdmin();
+}
+
+/* ---- NAV ---- */
+function goView(v){
+  hide('pin-screen');
+  document.getElementById('admin-view').style.display = v==='admin'?'':'none';
+  document.getElementById('customer-view').style.display = v==='customer'?'':'none';
+  setBtnOn(v==='admin'?'btn-admin':'btn-cust');
+  if(v==='customer'&&!myTicketId) goPage('menu');
+}
+function goPage(p){
+  document.getElementById('page-menu').classList.toggle('active',p==='menu');
+  document.getElementById('page-ticket').classList.toggle('active',p==='ticket');
+}
+function startNewOrder(){ myTicketId=null; cart={}; renderMenu(); goPage('menu'); }
+function setBtnOn(id){ ['btn-admin','btn-cust'].forEach(b=>document.getElementById(b).classList.toggle('on',b===id)); }
+function show(id){ document.getElementById(id).style.display=''; }
+function hide(id){ document.getElementById(id).style.display='none'; }
+function fmt(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function timerTxt(o){
+  const elapsed = getElapsed(o);
+  if(o.status==='waiting') return `Waiting · ${elapsed}m`;
+  if(['ready','paid','completed'].includes(o.status)) return capitalize(o.status);
+  return elapsed>o.maxTime?`Delayed ${elapsed-o.maxTime}m`:`${elapsed}m / est. ${o.maxTime}m`;
+}
+
+// Initial Boot view
+goView('customer');
+
+// Auto update timer displays every minute locally
+setInterval(()=>{
+  renderAdmin();
+},60000);
+</script>
+</body>
+</html>
