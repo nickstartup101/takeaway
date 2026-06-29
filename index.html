@@ -702,7 +702,7 @@ const SEED_CATEGORIES = {
     {id:"m1", name:"Pour Matcha",lao:"ພຽວມັດຊະ",prices:[null,35,null], category:"Matcha"},
     {id:"m2", name:"Matcha Latte",lao:"ມັດຊະລາເຕ້",prices:[null,49,null], category:"Matcha"},
     {id:"m3", name:"Coconut Matcha",lao:"ໂຄໂຄດມັດຊະ",prices:[null,45,null], category:"Matcha"},
-    {id:"m4", name:"Matcha Cloud",lao:"ມັດຊະຄລາວ",prices:[null,62,null], category:"Matcha"},
+    {id:"m4", name:"Matcha Cloud",lao:"ມັດຊະຄລາວ",prices:[null,62,null], badge:"SIG", category:"Matcha"},
     {id:"m5", name:"Matcha Creamy Frappe",lao:"ມັດຊະຄຣີມີ້ເຟຣັບເປ້",prices:[75,85,null],badge:"NEW",sizeLabels:["Normal Milk","Oat Milk"], category:"Matcha"},
     {id:"m6", name:"Cloud No.3",lao:"ຄລາວ ເລກ 3",prices:[null,65,null],badge:"SIG", category:"Matcha"},
   ],
@@ -840,6 +840,10 @@ if (isFirebaseConnected) {
       grouped[cat].push({ id: doc.id, ...data });
     });
     MENU = grouped;
+    
+    // Save to localStorage as dynamic offline cache to prevent mismatches
+    localStorage.setItem('la_dolce_menu', JSON.stringify(MENU));
+
     renderMenu();
     renderAdminMenuList();
   }, err => console.error("Menu sync error:", err));
@@ -941,15 +945,28 @@ function saveMenuToDb(payload, itemId = null) {
   } else {
     return new Promise((resolve) => {
       if (itemId) {
-        for (let cat in MENU) {
-          const idx = MENU[cat].findIndex(x => x.id === itemId);
+        // Bulletproof offline swap category logic to prevent mismatches
+        for (let oldCat in MENU) {
+          const idx = MENU[oldCat].findIndex(x => x.id === itemId);
           if (idx !== -1) {
-            MENU[cat][idx] = { ...MENU[cat][idx], ...payload };
+            const originalItem = MENU[oldCat][idx];
+            const updatedItem = { ...originalItem, ...payload };
+            
+            // Remove from the old category array
+            MENU[oldCat].splice(idx, 1);
+            if (MENU[oldCat].length === 0) {
+              delete MENU[oldCat];
+            }
+            
+            // Push to the new category array
+            const newCat = payload.category || 'Coffee';
+            if (!MENU[newCat]) MENU[newCat] = [];
+            MENU[newCat].push(updatedItem);
             break;
           }
         }
       } else {
-        const cat = payload.category;
+        const cat = payload.category || 'Coffee';
         if (!MENU[cat]) MENU[cat] = [];
         const newItem = { id: 'local_' + Date.now(), ...payload, createdAt: Date.now() };
         MENU[cat].push(newItem);
@@ -971,6 +988,9 @@ function deleteMenuFromDb(itemId) {
         const idx = MENU[cat].findIndex(x => x.id === itemId);
         if (idx !== -1) {
           MENU[cat].splice(idx, 1);
+          if (MENU[cat].length === 0) {
+            delete MENU[cat];
+          }
           break;
         }
       }
