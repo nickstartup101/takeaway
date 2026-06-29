@@ -56,7 +56,7 @@
     max-height: 940px; 
     border-radius: 24px;
     border: 1px solid var(--border);
-    box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -95,13 +95,22 @@
   .pin-key.del{font-size:14px;color:var(--text-secondary)}
   .pin-error{font-size:12px;color:#E24B4A;font-weight:500;min-height:16px}
 
-  /* INDEPENDENT SCROLL BOXES */
-  #admin-view, #customer-view {
+  /* INDEPENDENT SCROLL BOXES (CLEANED UP COMPETING OVERFLOWS) */
+  #admin-view {
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  #customer-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Handles scrolling for the entire customer window cleanly */
+    -webkit-overflow-scrolling: touch;
+    background: var(--surface-1);
   }
 
   /* STATUS COLORS */
@@ -177,7 +186,7 @@
   .icon-btn:hover{color:var(--text-accent)}
   .icon-btn.danger:hover{color:#E24B4A}
 
-  /* CUSTOMER NAVIGATION / PAGE CONTROL (ROUTING BUG FIXED) */
+  /* CUSTOMER NAVIGATION / PAGE ROUTING FIXED */
   .page {
     display: none !important;
   }
@@ -185,28 +194,54 @@
     display: block !important;
   }
   #page-menu.active {
-    display: flex !important;
-    flex-direction: column;
-    height: 100%;
+    display: block !important; /* Flow naturally inside the scrollable customer-view container */
+    width: 100%;
   }
 
+  /* PREMIUM BANNER WITH FLOAT LIGHTBOX BADGE */
   .menu-hero {
     background: #ffffff;
-    border-bottom: 1px solid var(--border);
     position: relative;
+    width: 100%;
     overflow: hidden;
   }
+  
   #menu-display {
-    border-radius: 0 0 16px 16px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    width: 100%;
+    height: 220px; /* Unified modern cover height to prevent squishing layout */
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  #menu-display:hover {
+    opacity: 0.92;
+  }
+  
+  .view-full-badge {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.65);
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.1);
   }
   
   .menu-placeholder{padding:50px 20px;text-align:center;color:var(--text-muted);font-size:13px}
-  .order-panel{padding:16px}
+  .order-panel{padding:16px; background: var(--surface-1);}
   .order-panel h3{font-size:15px;font-weight:600;margin-bottom:12px}
   .menu-items{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
   
-  /* REDESIGNED: PREMIUM MODERN MENU ITEM CARDS */
+  /* PREMIUM MODERN MENU ITEM CARDS */
   .menu-item-row {
     display: flex;
     align-items: center;
@@ -492,18 +527,22 @@
   <div class="grid" id="admin-grid" style="flex:1; overflow-y:auto;"></div>
 </div>
 
-<!-- ===== CUSTOMER VIEW ===== -->
+<!-- ===== CUSTOMER VIEW (ROUTING ENTIRELY CLEANED) ===== -->
 <div id="customer-view"> 
   <div class="page active" id="page-menu"> 
     <div class="menu-hero" style="flex-shrink: 0;">
-      <img id="menu-display" alt="La Dolce menu" style="display:none">
+      <img id="menu-display" alt="La Dolce menu" onclick="openLightbox()" style="display:none">
+      <!-- Floating action badge to zoom printed high-def menu -->
+      <div id="zoom-badge" class="view-full-badge" onclick="openLightbox()" style="display:none">
+        <i class="ti ti-zoom-in"></i> ເບິ່ງເມນູຮູບເຕັມ (Zoom Menu)
+      </div>
       <div class="menu-placeholder" id="menu-placeholder">
         <i class="ti ti-photo-off" style="font-size:30px;display:block;margin-bottom:8px" aria-hidden="true"></i>
         Menu image will appear once admin uploads it
       </div>
     </div>
     
-    <div class="order-panel" style="flex:1; overflow-y:auto;">
+    <div class="order-panel">
       <h3 style="font-size:16px; font-weight:700; color:var(--text-primary); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
         <i class="ti ti-tools-kitchen-2" style="color:var(--text-accent)"></i> Place your order (ເລືອກລາຍການສັ່ງຊື້)
       </h3>
@@ -527,7 +566,7 @@
     </div>
   </div>
 
-  <div class="page" id="page-ticket" style="height:100%; overflow-y:auto;">
+  <div class="page" id="page-ticket">
     <div class="ticket-page" id="ticket-inner"></div>
   </div>
 </div>
@@ -564,6 +603,16 @@
       <span id="custom-total-price">0 K</span>
     </button>
   </div>
+</div>
+
+<!-- ===== FULL-SCREEN PORTRAIT LIGHTBOX MODAL ===== -->
+<div id="lightbox-modal" class="modal-overlay" onclick="closeLightbox()" style="align-items: center; justify-content: center; background: rgba(0,0,0,0.92); z-index:9000;">
+  <div style="position: absolute; top: 16px; right: 16px; z-index: 10100;">
+    <button class="icon-btn" onclick="closeLightbox()" style="font-size: 22px; color: white; background: rgba(0,0,0,0.5); border-radius: 50%; width: 42px; height: 42px; display:flex; align-items:center; justify-content:center;">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+  <img id="lightbox-img" src="" style="max-width: 95%; max-height: 90%; object-fit: contain; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
 </div>
 
 <!-- ===== SLIP VIEWER MODAL ===== -->
@@ -694,6 +743,28 @@ let knownOrderIds = new Set();
 let isFirstLoad = true;
 let lastTicketStatus = null;
 
+function detectDevice() {
+  const width = window.innerWidth;
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  
+  let deviceType = "desktop";
+  if (/android|ipad|playbook|silk/i.test(userAgent)) {
+    deviceType = "tablet";
+  } else if (/iphone|ipod/i.test(userAgent)) {
+    deviceType = "phone";
+  }
+  
+  if (width <= 480) {
+    deviceType = "phone";
+  } else if (width > 480 && width <= 1024) {
+    deviceType = "tablet";
+  }
+  
+  document.body.setAttribute('data-device', deviceType);
+}
+window.addEventListener('resize', detectDevice);
+window.addEventListener('DOMContentLoaded', detectDevice);
+
 function playSound(type) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -741,6 +812,10 @@ if (isFirebaseConnected) {
         if (d) { d.src = menuDataUrl; d.style.display = 'block'; }
         const placeholder = document.getElementById('menu-placeholder');
         if (placeholder) placeholder.style.display = 'none';
+        
+        // Show Zoom badge if image exists
+        const zoom = document.getElementById('zoom-badge');
+        if (zoom) zoom.style.display = 'flex';
       }
       if (data.qrDataUrl) {
         qrDataUrl = data.qrDataUrl;
@@ -816,6 +891,8 @@ if (isFirebaseConnected) {
     if (d) { d.src = menuDataUrl; d.style.display = 'block'; }
     const placeholder = document.getElementById('menu-placeholder');
     if (placeholder) placeholder.style.display = 'none';
+    const zoom = document.getElementById('zoom-badge');
+    if (zoom) zoom.style.display = 'flex';
   }
   
   qrDataUrl = localStorage.getItem('la_dolce_qr_image');
@@ -961,7 +1038,40 @@ function sendDelayAlert(id) {
   }
 }
 
-/* ---- SECURITY PIN CODE ---- */
+function seedMenuIfEmpty() {
+  const batch = db.batch();
+  let count = 0;
+  Object.keys(SEED_CATEGORIES).forEach((cat) => {
+    SEED_CATEGORIES[cat].forEach((item) => {
+      const docRef = db.collection('menu').doc();
+      const payload = {
+        category: cat,
+        name: item.name,
+        lao: item.lao,
+        prices: item.prices,
+        createdAt: Date.now() + count
+      };
+      if (item.badge) payload.badge = item.badge;
+      if (item.sizeLabels) payload.sizeLabels = item.sizeLabels;
+      batch.set(docRef, payload);
+      count++;
+    });
+  });
+  batch.commit();
+}
+
+/* ---- PORTRAIT LIGHTBOX CONTROLS ---- */
+function openLightbox() {
+  if (menuDataUrl) {
+    document.getElementById('lightbox-img').src = menuDataUrl;
+    document.getElementById('lightbox-modal').style.display = 'flex';
+  }
+}
+function closeLightbox() {
+  document.getElementById('lightbox-modal').style.display = 'none';
+}
+
+/* ---- PIN SECURITY ---- */
 function tryGoAdmin(){
   if(adminUnlocked){ showAdminView(); return; }
   showPinScreen();
@@ -1123,6 +1233,9 @@ function handleMenuUpload(e){
         const placeholder = document.getElementById('menu-placeholder');
         if (placeholder) placeholder.style.display = 'none';
         
+        const zoom = document.getElementById('zoom-badge');
+        if (zoom) zoom.style.display = 'flex';
+
         prog.complete();
         document.getElementById('menu-note').textContent = f.name;
       }
@@ -1979,7 +2092,7 @@ function renderTicket(id){
   `;
 }
 
-/* ---- ADMIN TICKETS PROCESS ---- */
+/* ---- ADMIN ADVANCE PROCESS ---- */
 function advance(id){
   const o = orders.find(x=>x.id===id); if(!o) return;
   const map = {waiting:'making',making:'ready',ready:'completed',paid:'completed'};
@@ -2093,11 +2206,15 @@ function refreshMenuImageDisplay() {
     if (placeholder) {
       placeholder.style.display = 'none';
     }
+    const zoom = document.getElementById('zoom-badge');
+    if (zoom) zoom.style.display = 'flex';
   } else {
     const d = document.getElementById('menu-display');
     if (d) d.style.display = 'none';
     const placeholder = document.getElementById('menu-placeholder');
     if (placeholder) placeholder.style.display = 'block';
+    const zoom = document.getElementById('zoom-badge');
+    if (zoom) zoom.style.display = 'none';
   }
 }
 
