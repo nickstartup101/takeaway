@@ -95,7 +95,7 @@
   .pin-key.del{font-size:14px;color:var(--text-secondary)}
   .pin-error{font-size:12px;color:#E24B4A;font-weight:500;min-height:16px}
 
-  /* INDEPENDENT SCROLL BOXES (CLEANED UP COMPETING OVERFLOWS) */
+  /* INDEPENDENT SCROLL BOXES */
   #admin-view {
     flex: 1;
     display: flex;
@@ -108,7 +108,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow-y: auto; /* Handles scrolling for the entire customer window cleanly */
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     background: var(--surface-1);
   }
@@ -194,7 +194,7 @@
     display: block !important;
   }
   #page-menu.active {
-    display: block !important; /* Flow naturally inside the scrollable customer-view container */
+    display: block !important; 
     width: 100%;
   }
 
@@ -208,7 +208,7 @@
   
   #menu-display {
     width: 100%;
-    height: 220px; /* Unified modern cover height to prevent squishing layout */
+    height: 220px; 
     object-fit: cover;
     display: block;
     cursor: pointer;
@@ -527,7 +527,7 @@
   <div class="grid" id="admin-grid" style="flex:1; overflow-y:auto;"></div>
 </div>
 
-<!-- ===== CUSTOMER VIEW (ROUTING ENTIRELY CLEANED) ===== -->
+<!-- ===== CUSTOMER VIEW ===== -->
 <div id="customer-view"> 
   <div class="page active" id="page-menu"> 
     <div class="menu-hero" style="flex-shrink: 0;">
@@ -1776,6 +1776,32 @@ function validateOrder() {
   document.getElementById('confirm-btn').disabled = !(name && phone && hasItems);
 }
 
+// QUICK QUANTITY ADJUST FROM MENU CARD
+function quickChangeQty(itemId, delta) {
+  const matchingKeys = Object.keys(cart).filter(key => cart[key].itemId === itemId);
+  
+  if (delta === -1) {
+    if (matchingKeys.length > 0) {
+      // Decrement the last customized version of this drink
+      const keyToTarget = matchingKeys[matchingKeys.length - 1];
+      cart[keyToTarget].qty += delta;
+      if (cart[keyToTarget].qty <= 0) {
+        delete cart[keyToTarget];
+      }
+    }
+  } else if (delta === 1) {
+    if (matchingKeys.length > 0) {
+      // Increment the last customized version
+      const keyToTarget = matchingKeys[matchingKeys.length - 1];
+      cart[keyToTarget].qty += delta;
+    } else {
+      openCustomizeModal(itemId);
+      return;
+    }
+  }
+  renderMenu();
+}
+
 function renderMenu(){
   renderCategoryTabs();
   const listContainer = document.getElementById('menu-items-list');
@@ -1787,14 +1813,13 @@ function renderMenu(){
     return;
   }
 
-  // Elegant visual category color styling matching boutique cafes
   const categoryColors = {
-    "Coffee": "#8D6E63",           // Espresso Brown
-    "Signature Coffee": "#FF8F00", // Honey Gold
-    "Matcha": "#2E7D32",           // Matcha Green
-    "Non-Coffee": "#5D4037",       // Dark Cocoa Brown
-    "Tea & Lemon": "#FBC02D",      // Lemon Yellow
-    "Fresh Drinks": "#00ACC1"      // Ocean Blue
+    "Coffee": "#8D6E63",           
+    "Signature Coffee": "#FF8F00", 
+    "Matcha": "#2E7D32",           
+    "Non-Coffee": "#5D4037",       
+    "Tea & Lemon": "#FBC02D",      
+    "Fresh Drinks": "#00ACC1"      
   };
   const activeAccentColor = categoryColors[selectedCategory] || "#FF8F00";
 
@@ -1804,8 +1829,6 @@ function renderMenu(){
     const totalQty = Object.values(cart)
       .filter(item => item.itemId === m.id || item.itemId === m.name)
       .reduce((s, item) => s + item.qty, 0);
-
-    const qtyBadge = totalQty > 0 ? `<span style="background:var(--border-accent); color:white; font-size:11px; padding:2px 6px; border-radius:10px; font-weight:600; margin-right:6px;">${totalQty}</span>` : '';
 
     const prices = m.prices || [];
     const validPrices = prices.filter(p => p !== null && p !== undefined);
@@ -1817,7 +1840,23 @@ function renderMenu(){
       priceStr = minPrice === maxPrice ? `${minPrice} K` : `${minPrice} - ${maxPrice} K`;
     }
 
-    const clickIdentifier = m.id || m.name; // Bulletproof click handler target identifier
+    const clickIdentifier = m.id || m.name;
+
+    // Direct change controls at menu list
+    let qtyControlsHtml = '';
+    if (totalQty > 0) {
+      qtyControlsHtml = `
+        <div style="display:flex; align-items:center; gap:6px;" onclick="event.stopPropagation();">
+          <button class="qty-btn" style="background:var(--bg-accent); color:var(--text-accent); border-color:var(--border-accent)" onclick="quickChangeQty('${clickIdentifier}', -1)">−</button>
+          <span class="qty-num" style="color:var(--text-primary); font-weight:600;">${totalQty}</span>
+          <button class="qty-btn" style="background:var(--bg-accent); color:var(--text-accent); border-color:var(--border-accent)" onclick="quickChangeQty('${clickIdentifier}', 1)">+</button>
+        </div>
+      `;
+    } else {
+      qtyControlsHtml = `
+        <button class="qty-btn" style="background:var(--bg-accent); color:var(--text-accent); border-color:var(--border-accent)" onclick="event.stopPropagation(); openCustomizeModal('${clickIdentifier}')">+</button>
+      `;
+    }
 
     return `
     <div class="menu-item-row" style="cursor:pointer; border-left: 4px solid ${activeAccentColor};" onclick="openCustomizeModal('${clickIdentifier}')">
@@ -1830,10 +1869,7 @@ function renderMenu(){
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
         <div class="mi-price" style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-right:4px;">${priceStr}</div>
-        <div style="display:flex; align-items:center;">
-          ${qtyBadge}
-          <button class="qty-btn" style="background:var(--bg-accent); color:var(--text-accent); border-color:var(--border-accent)">+</button>
-        </div>
+        ${qtyControlsHtml}
       </div>
     </div>`;
   }).join('');
