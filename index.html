@@ -1,5 +1,3 @@
-
-```html
 <!DOCTYPE html>
 <html lang="lo">
 <head>
@@ -46,7 +44,9 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    min-height: 100dvh;
     padding: 10px;
+    overflow: hidden; /* Lock background scrolling */
   }
 
   /* MOBILE & TABLET FLEXIBLE CONTAINER */
@@ -55,6 +55,7 @@
     width: 100%;
     max-width: 680px; 
     height: 100vh;
+    height: 100dvh;
     max-height: 940px; 
     border-radius: 24px;
     border: 1px solid var(--border);
@@ -63,6 +64,24 @@
     display: flex;
     flex-direction: column;
     position: relative;
+  }
+
+  /* NATIVE MOBILE & TABLET SCREEN ADJUSTMENTS (Up to 1024px) */
+  @media (max-width: 1024px) {
+    body {
+      padding: 0;
+      background: var(--surface-1);
+    }
+    .app {
+      max-width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      max-height: 100vh;
+      max-height: 100dvh;
+      border-radius: 0;
+      border: none;
+      box-shadow: none;
+    }
   }
 
   /* STATIC HEADER AREA */
@@ -102,7 +121,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
+    overflow: hidden; /* Lock nested scrolls on parent */
     -webkit-overflow-scrolling: touch;
   }
 
@@ -144,7 +163,7 @@
   .chip-d.on{background:#F5F5F5;color:#757575;border-color:#bbb}
   .chip-all.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;padding:12px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;padding:12px;padding-bottom:120px;}
   .card{background:var(--surface-0);border-radius:14px;border:1px solid var(--border);overflow:hidden}
   .card-hdr{padding:10px 12px;display:flex;justify-content:space-between;align-items:center}
   .card-hdr-id{font-size:13px;font-weight:500}
@@ -220,6 +239,12 @@
     opacity: 0.92;
   }
   
+  @media (max-width: 480px) {
+    #menu-display {
+      height: 165px; 
+    }
+  }
+
   .view-full-badge {
     position: absolute;
     bottom: 12px;
@@ -253,11 +278,10 @@
     border-radius: 12px;
     border: 1px solid var(--border);
     box-shadow: 0 2px 6px rgba(0,0,0,0.015);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: background 0.15s ease, border-color 0.15s ease;
   }
-  .menu-item-row:hover, .menu-item-row:active {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+  .menu-item-row:active {
+    background: var(--surface-2);
     border-color: var(--border-accent);
   }
   
@@ -349,6 +373,27 @@
   .empty{padding:40px;text-align:center;color:var(--text-muted);font-size:13px}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
   .pulse{animation:pulse 1.5s infinite}
+
+  /* Hide custom category scrollbars */
+  #category-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* SLEEK SAME CLIENT BLINKING DOT */
+  @keyframes pulse-purple {
+    0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(106, 27, 154, 0.7); }
+    70% { transform: scale(1.1); box-shadow: 0 0 0 5px rgba(106, 27, 154, 0); }
+    100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(106, 27, 154, 0); }
+  }
+  .pulse-dot-purple {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #6A1B9A;
+    border-radius: 50%;
+    animation: pulse-purple 1.8s infinite;
+    vertical-align: middle;
+  }
   </style>
 </head>
 <body>
@@ -710,7 +755,7 @@ const SEED_CATEGORIES = {
   ],
   "Non-Coffee":[
     {id:"nc1", name:"Cocoa",lao:"ໂກໂກ້",prices:[34,36,52], category:"Non-Coffee"},
-    {id:"nc2", name:"Double Choc",lao:"ດັບເບິ້ລໂກຊ໊ອກ",prices:[null,67,null], category:"Non-Coffee"},
+    {id:"nc2", name:"Double Choc",lao:"ດັບເບິ້លໂກຊ໊ອກ",prices:[null,67,null], category:"Non-Coffee"},
   ],
   "Tea & Lemon":[
     {id:"tl1", name:"Green Tea Honey Lemon",lao:"ກຣີນທີ ນ້ຳເຜິ້ງເລໝອນ",prices:[null,36,null], category:"Tea & Lemon"},
@@ -745,6 +790,9 @@ let knownOrderIds = new Set();
 let isFirstLoad = true;
 let lastTicketStatus = null;
 
+// Track expanded status for long orders inside admin cards
+let expandedCards = new Set();
+
 function detectDevice() {
   const width = window.innerWidth;
   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -765,14 +813,7 @@ function detectDevice() {
   document.body.setAttribute('data-device', deviceType);
 }
 window.addEventListener('resize', detectDevice);
-window.addEventListener('DOMContentLoaded', () => {
-  detectDevice();
-  // FORCE-PULL: Pre-fill last saved customer details on load
-  const savedName = localStorage.getItem('la_dolce_last_name') || '';
-  const savedPhone = localStorage.getItem('la_dolce_last_phone') || '';
-  if (savedName) document.getElementById('cust-name').value = savedName;
-  if (savedPhone) document.getElementById('cust-phone').value = savedPhone;
-});
+window.addEventListener('DOMContentLoaded', detectDevice);
 
 function playSound(type) {
   try {
@@ -1127,9 +1168,9 @@ function pinDel(){
 function pinCancel(){
   goView('customer');
 }
-function updatePinDots(){
-  for(let i=0;i<4;i++){
-    document.getElementById('d'+i).classList.toggle('filled', i < pinBuffer.length);
+function updatePinDots() {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('d' + i).classList.toggle('filled', i < pinBuffer.length);
   }
 }
 function checkPin(){
@@ -1143,8 +1184,7 @@ function checkPin(){
     updatePinDots();
     const dots = document.getElementById('pin-dots');
     dots.style.transform = 'translateX(6px)';
-    setTimeout(()=>dots.style.transform='translateX(-6px)',80);
-    setTimeout(()=>dots.style.transform='',160);
+    setTimeout(()=>dots.style.transform='translateX(0)',160);
   }
 }
 function lockAdmin(){
@@ -2230,6 +2270,16 @@ function getElapsed(o) {
   return Math.floor((Date.now() - o.timestamp) / 60000);
 }
 
+// See More / See Less Toggle for Long Orders
+function toggleCardExpand(id) {
+  if (expandedCards.has(id)) {
+    expandedCards.delete(id);
+  } else {
+    expandedCards.add(id);
+  }
+  renderAdmin();
+}
+
 function renderAdmin(){
   const grid = document.getElementById('admin-grid');
   if(!grid) return;
@@ -2244,35 +2294,77 @@ function renderAdmin(){
     const over = o.status==='making' && elapsed > o.maxTime;
     const pct = ['ready','paid','completed'].includes(o.status)?100:Math.min(100,Math.round(elapsed/o.maxTime*100));
     const pCol = o.status==='ready'?'#2E7D32':over?'#E24B4A':pct>70?'#E65100':'#1565C0';
+    
+    // --- MULTI-TICKET SCANNER ---
+    // Find other active orders (not completed) with the same phone number or name
+    const otherOrders = orders.filter(other => 
+      other.id !== o.id && 
+      other.status !== 'completed' && 
+      ((o.customerPhone && other.customerPhone === o.customerPhone) || 
+       (!o.customerPhone && other.customerName === o.customerName))
+    );
+    
+    // Subtle pulsating purple dot instead of big box
+    let otherTicketsBadge = '';
+    if (otherOrders.length > 0) {
+      const otherIds = otherOrders.map(other => other.id).join(', ');
+      otherTicketsBadge = `
+        <span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; vertical-align: middle;" title="ບິນຮ່ວມ: ${otherIds}">
+          <span class="pulse-dot-purple"></span>
+          <span style="font-size: 10px; color: #6A1B9A; font-weight: 700;">ຮ່ວມ ${otherIds}</span>
+        </span>
+      `;
+    }
+    // -----------------------------
+
+    // SEE MORE / SEE LESS COLLAPSIBLE LOGIC
+    const maxItemsToShow = 2;
+    const items = o.items || [];
+    const isExpanded = expandedCards.has(o.id);
+    const itemsToRender = isExpanded ? items : items.slice(0, maxItemsToShow);
+
+    const itemsHtml = itemsToRender.map(i => {
+      const variantText = i.variantLabel ? ` (${i.variantLabel})` : '';
+      const addonsText = i.addons && i.addons.length ? `<div style="font-size:10px; color:var(--text-muted); padding-left: 6px;">+ ${i.addons.join(', ')}</div>` : '';
+      const commentText = i.comment ? `<div style="font-size:11.5px; color:#E65100; font-weight:600; padding-left: 6px; margin-top:2px;"><i class="ti ti-message-circle"></i> ${i.comment}</div>` : '';
+      
+      return `
+        <div class="card-item" style="flex-direction:column; align-items:flex-start; gap:2px; padding:4px 0;">
+          <div style="display:flex; justify-content:space-between; width:100%; font-size:12px;">
+            <span style="font-weight:600;">${i.name}${variantText}</span>
+            <span style="color:var(--text-muted); font-weight:500;">×${i.qty}</span>
+          </div>
+          ${addonsText}
+          ${commentText}
+        </div>
+      `;
+    }).join('');
+
+    let toggleBtnHtml = '';
+    if (items.length > maxItemsToShow) {
+      toggleBtnHtml = `
+        <button onclick="event.stopPropagation(); toggleCardExpand('${o.id}')" style="background: none; border: none; color: var(--text-accent); font-size: 11px; font-weight: 600; cursor: pointer; padding: 4px 0; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;">
+          ${isExpanded ? '<i class="ti ti-chevron-up"></i> See Less' : `<i class="ti ti-chevron-down"></i> See More (+${items.length - maxItemsToShow})`}
+        </button>
+      `;
+    }
+
     return `<div class="card" style="margin-bottom:8px;">
       <div class="card-hdr ${hdr}">
         <div>
           <div class="card-hdr-id">${o.id}</div>
           <div class="card-hdr-name">${o.type} · ${o.createdAt}</div>
-          <div style="font-size:11px; font-weight:500; margin-top:2px;">
+          <div style="font-size:11px; font-weight:500; margin-top:2px; display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
             <i class="ti ti-user" aria-hidden="true"></i> ${o.customerName || 'Customer'} (${o.customerPhone || ''})
+            ${otherTicketsBadge}
           </div>
           ${o.comment ? `<div style="font-size:11px; background:rgba(0,0,0,0.15); padding:3px 6px; border-radius:4px; display:inline-block; margin-top:4px; font-weight:500;">ໝາຍເຫດລວມ: ${o.comment}</div>` : ''}
         </div>
         <i class="ti ti-coffee" style="font-size:18px;opacity:.75" aria-hidden="true"></i>
       </div>
       <div class="card-body">
-        ${o.items.map(i => {
-          const variantText = i.variantLabel ? ` (${i.variantLabel})` : '';
-          const addonsText = i.addons && i.addons.length ? `<div style="font-size:10px; color:var(--text-muted); padding-left: 6px;">+ ${i.addons.join(', ')}</div>` : '';
-          const commentText = i.comment ? `<div style="font-size:11.5px; color:#E65100; font-weight:600; padding-left: 6px; margin-top:2px;"><i class="ti ti-message-circle"></i> ${i.comment}</div>` : '';
-          
-          return `
-            <div class="card-item" style="flex-direction:column; align-items:flex-start; gap:2px; padding:4px 0;">
-              <div style="display:flex; justify-content:space-between; width:100%; font-size:12px;">
-                <span style="font-weight:600;">${i.name}${variantText}</span>
-                <span style="color:var(--text-muted); font-weight:500;">×${i.qty}</span>
-              </div>
-              ${addonsText}
-              ${commentText}
-            </div>
-          `;
-        }).join('')}
+        ${itemsHtml}
+        ${toggleBtnHtml}
         <div style="font-size:11px;font-weight:500;color:var(--text-secondary);margin-top:4px;border-top:0.5px solid var(--border);padding-top:4px">${o.total} K</div>
       </div>
       <div class="card-footer">
