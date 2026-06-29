@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>La Dolce Takeaway</title>
   
+  <!-- Noto Sans Lao Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@100..900&display=swap" rel="stylesheet">
+
   <!-- Tabler Icons CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   
@@ -14,7 +19,7 @@
 
   <style>
   :root {
-    --font-sans: system-ui, -apple-system, sans-serif;
+    --font-sans: 'Noto Sans Lao', system-ui, -apple-system, sans-serif;
     --surface-0: #ffffff;
     --surface-1: #f9f9fb;
     --surface-2: #f1f1f5;
@@ -172,9 +177,19 @@
   .icon-btn:hover{color:var(--text-accent)}
   .icon-btn.danger:hover{color:#E24B4A}
 
-  /* CUSTOMER */
-  .page{display:none}
-  .page.active{display:block}
+  /* CUSTOMER NAVIGATION / PAGE CONTROL (ROUTING BUG FIXED) */
+  .page {
+    display: none !important;
+  }
+  .page.active {
+    display: block !important;
+  }
+  #page-menu.active {
+    display: flex !important;
+    flex-direction: column;
+    height: 100%;
+  }
+
   .menu-hero{background:var(--surface-1);text-align:center}
   
   /* HIGH-DEFINITION MENU IMAGE DISPLAY STYLING */
@@ -478,7 +493,7 @@
 
 <!-- ===== CUSTOMER VIEW ===== -->
 <div id="customer-view"> 
-  <div class="page active" id="page-menu" style="height:100%; display:flex; flex-direction:column;">
+  <div class="page active" id="page-menu"> 
     <div class="menu-hero" style="flex-shrink: 0;">
       <img id="menu-display" alt="La Dolce menu" style="display:none">
       <div class="menu-placeholder" id="menu-placeholder">
@@ -493,7 +508,7 @@
       <div class="cust-input-group">
         <input type="text" id="cust-name" placeholder="ຊື່ຂອງທ່ານ / Name" class="cust-input" oninput="validateOrder()">
         <input type="tel" id="cust-phone" placeholder="ເບີຕິດຕໍ່ / Contact Number" class="cust-input" oninput="validateOrder()">
-        <input type="text" id="cust-comment" placeholder="ໝາຍເຫດ (ເຊັ່ນ: ຫວານໜ້ອຍ, ບໍ່ໃສ່ນ້ຳຕານ...) / Comments" class="cust-input">
+        <input type="text" id="cust-comment" placeholder="ໝາຍເຫດລວມ (ເຊັ່ນ: ຂໍຫຼອດແດ່, ແຍກນ້ຳກ້ອນ...) / Order Notes" class="cust-input">
       </div>
 
       <!-- Categories Navigation Slider -->
@@ -530,9 +545,15 @@
       <div id="variant-options" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
     </div>
 
-    <div style="margin-bottom:16px;">
+    <div style="margin-bottom:14px;">
       <div style="font-size:11px; font-weight:500; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Add-ons / ເພີ່ມເຕີມ</div>
-      <div id="addon-options" style="display:flex; flex-direction:column; gap:6px; max-height: 180px; overflow-y: auto;"></div>
+      <div id="addon-options" style="display:flex; flex-direction:column; gap:6px; max-height: 120px; overflow-y: auto;"></div>
+    </div>
+
+    <!-- DRINK-SPECIFIC COMMENT BOX (ຄອມເມັ້ນລາຍແກ້ວ) -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px; font-weight:500; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">ຄອມເມັ້ນສະເພາະເຄື່ອງດື່ມນີ້ / Request</div>
+      <input type="text" id="cust-drink-comment" placeholder="ເຊັ່ນ: ຫວານໜ້ອຍ, ເພີ່ມຊ໊ອດ..." class="cust-input">
     </div>
 
     <button class="confirm-btn" onclick="addCustomizedToCart()" id="add-to-cart-btn" style="background:#FF8F00; display:flex; justify-content:space-between; align-items:center; padding:12px 16px;">
@@ -670,28 +691,6 @@ let knownOrderIds = new Set();
 let isFirstLoad = true;
 let lastTicketStatus = null;
 
-function detectDevice() {
-  const width = window.innerWidth;
-  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-  
-  let deviceType = "desktop";
-  if (/android|ipad|playbook|silk/i.test(userAgent)) {
-    deviceType = "tablet";
-  } else if (/iphone|ipod/i.test(userAgent)) {
-    deviceType = "phone";
-  }
-  
-  if (width <= 480) {
-    deviceType = "phone";
-  } else if (width > 480 && width <= 1024) {
-    deviceType = "tablet";
-  }
-  
-  document.body.setAttribute('data-device', deviceType);
-}
-window.addEventListener('resize', detectDevice);
-window.addEventListener('DOMContentLoaded', detectDevice);
-
 function playSound(type) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -720,13 +719,7 @@ function playTone(ctx, freq, duration, delay) {
   osc.stop(ctx.currentTime + delay + duration);
 }
 
-let tempSelection = {
-  itemId: null,
-  variantIndex: 0,
-  addons: {} 
-};
-
-/* ---- REAL-TIME CONNECTIONS WRAPPER ---- */
+/* ---- REAL-TIME CONNECTIONS ---- */
 if (isFirebaseConnected) {
   db.collection('settings').doc('config').onSnapshot(doc => {
     if (doc.exists) {
@@ -804,7 +797,7 @@ if (isFirebaseConnected) {
     }
   }, err => console.error("Orders sync error:", err));
 } else {
-  // OFFLINE BACKUP MODE (LocalStorage Hybrid)
+  // OFFLINE BACKUP MODE
   console.log("Offline mode active.");
   menuDataUrl = localStorage.getItem('la_dolce_menu_image');
   if (menuDataUrl) {
@@ -837,8 +830,8 @@ if (isFirebaseConnected) {
     orders = JSON.parse(localOrders);
   } else {
     orders = [
-      {id:'#1001', status:'making', type:'Take Away', customerName:'ສົມສັກ (Somsack)', customerPhone:'020 5555 1234', comment:'ຫວານໜ້ອຍ', items:[{name:'Creamy Coffee (SIG)',variantLabel:'Standard',qty:1,price:59,addons:[]}], total:59, createdAt:'09:00', timestamp:Date.now()-480000, timeline:[{label:'Order placed',time:'09:00',done:true},{label:'Barista accepted',time:'09:01',done:true},{label:'Making drink',time:null,done:false,active:true},{label:'Ready for pickup',time:null,done:false}]},
-      {id:'#1002', status:'waiting', type:'Take Away', customerName:'ແກ້ວ (Keo)', customerPhone:'020 7777 5678', comment:'', items:[{name:'Latte',variantLabel:'Iced',qty:1,price:36,addons:['Oat milk']}], total:36, createdAt:'09:05', timestamp:Date.now()-180000, timeline:[{label:'Order placed',time:'09:05',done:true},{label:'Barista accepted',time:null,done:false},{label:'Making drink',time:null,done:false,active:false},{label:'Ready for pickup',time:null,done:false}]}
+      {id:'#1001', status:'making', type:'Take Away', customerName:'ສົມສັກ (Somsack)', customerPhone:'020 5555 1234', comment:'ແຍກນ້ຳກ້ອນ', items:[{name:'Creamy Coffee (SIG)',variantLabel:'Standard',qty:1,price:59,addons:[],comment:'ຫວານໜ້ອຍ'}], total:59, createdAt:'09:00', timestamp:Date.now()-480000, timeline:[{label:'Order placed',time:'09:00',done:true},{label:'Barista accepted',time:'09:01',done:true},{label:'Making drink',time:null,done:false,active:true},{label:'Ready for pickup',time:null,done:false}]},
+      {id:'#1002', status:'waiting', type:'Take Away', customerName:'ແກ້ວ (Keo)', customerPhone:'020 7777 5678', comment:'', items:[{name:'Latte',variantLabel:'Iced',qty:1,price:36,addons:['Oat milk'],comment:'ເພີ່ມຊ໊ອດກາເຟ'}], total:36, createdAt:'09:05', timestamp:Date.now()-180000, timeline:[{label:'Order placed',time:'09:05',done:true},{label:'Barista accepted',time:null,done:false},{label:'Making drink',time:null,done:false,active:false},{label:'Ready for pickup',time:null,done:false}]}
     ];
     localStorage.setItem('la_dolce_orders', JSON.stringify(orders));
   }
@@ -954,7 +947,7 @@ function sendDelayAlert(id) {
       if (myTicketId === id) {
         renderTicket(id);
       }
-      alert("ສົ່ງແຈ້ງເຕືອນລໍຖ້າໃຫ້ລູກຄ້າສຳເລັດ! (Local Offline Mode)");
+      alert("ສົ່ງແຈ້ງເຕືອນລໍຖ້າໃຫ້ລູກຄ້າສຳເລັດ! (Local Mode)");
     }
   }
 }
@@ -1447,7 +1440,6 @@ function saveMenuItem() {
   const p1 = document.getElementById('menu-item-price-1').value;
   const p2 = document.getElementById('menu-item-price-2').value;
 
-  // Preserve positions for Hot, Iced, and Blended variants
   const prices = [
     p0 !== '' ? Number(p0) : null,
     p1 !== '' ? Number(p1) : null,
@@ -1460,10 +1452,7 @@ function saveMenuItem() {
     sizeLabels = labelsInput.split(',').map(s => s.trim());
   }
 
-  // Ensure there is at least one non-null price offering
-  const hasPriceOffer = prices.some(p => p !== null);
-
-  if (!name || !hasPriceOffer) {
+  if (!name || (prices[0] === null && prices[1] === null && prices[2] === null)) {
     alert('Please fill out the drink name and at least one price variant.');
     return;
   }
@@ -1528,7 +1517,7 @@ function openCustomizeModal(itemId) {
   if (!drink) return;
 
   tempSelection.itemId = itemId;
-  tempSelection.addons = {};
+  document.getElementById('cust-drink-comment').value = ''; // Reset drink-specific comment on open
 
   document.getElementById('cust-drink-name').textContent = drink.name;
   document.getElementById('cust-drink-lao').textContent = drink.lao || '';
@@ -1537,7 +1526,6 @@ function openCustomizeModal(itemId) {
   const prices = drink.prices || [];
   const labels = drink.sizeLabels || DEF_LABELS;
   
-  // Set default selection index to the first available non-null price index
   let firstAvailableIdx = prices.findIndex(p => p !== null && p !== undefined);
   if (firstAvailableIdx === -1) firstAvailableIdx = 0;
   tempSelection.variantIndex = firstAvailableIdx;
@@ -1635,8 +1623,11 @@ function addCustomizedToCart() {
     selectedAddons.push({ name: name, price: tempSelection.addons[name] });
   }
 
+  const drinkComment = document.getElementById('cust-drink-comment').value.trim();
+
+  // Create unique key using comment so identical drinks with different notes are tracked separately
   const addonKeys = selectedAddons.map(a => a.name).sort().join(',');
-  const cartKey = `${tempSelection.itemId}_${idx}_${addonKeys}`;
+  const cartKey = `${tempSelection.itemId}_${idx}_${addonKeys}_${drinkComment}`;
 
   if (cart[cartKey]) {
     cart[cartKey].qty += 1;
@@ -1648,6 +1639,7 @@ function addCustomizedToCart() {
       variantLabel: variantLabel,
       variantPrice: variantPrice,
       addons: selectedAddons,
+      comment: drinkComment, // Drink-specific note saved
       qty: 1
     };
   }
@@ -1656,7 +1648,7 @@ function addCustomizedToCart() {
   renderMenu();
 }
 
-/* ---- CART ---- */
+/* ---- CART SUMMARY ---- */
 function updateCartItemQty(key, delta) {
   if (cart[key]) {
     cart[key].qty += delta;
@@ -1738,6 +1730,7 @@ function renderCartSummary() {
       total += totalCost;
 
       const addonsStr = item.addons.length ? ` (+${item.addons.map(a => a.name).join(', ')})` : '';
+      const commentHtml = item.comment ? `<div style="font-size:11px; color:#E65100; font-weight:500; margin-top:2px;"><i class="ti ti-message-circle"></i> ${item.comment}</div>` : '';
       const title = `${item.name} (${item.variantLabel})${addonsStr}`;
 
       return `
@@ -1745,6 +1738,7 @@ function renderCartSummary() {
           <div style="flex:1;">
             <div style="font-weight: 500;">${title}</div>
             <div style="font-size:10px; color:var(--text-muted);">${item.lao || ''}</div>
+            ${commentHtml}
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
             <div style="display:flex; align-items:center; gap:4px;">
@@ -1782,7 +1776,8 @@ function placeOrder(){
       variantLabel: item.variantLabel,
       addons: item.addons.map(a => a.name),
       qty: item.qty,
-      price: singleItemPrice
+      price: singleItemPrice,
+      comment: item.comment // Individual drink comments sent to database
     };
   });
 
@@ -1796,7 +1791,7 @@ function placeOrder(){
     type: 'Take Away',
     customerName: customerName,
     customerPhone: customerPhone,
-    comment: customerComment,
+    comment: customerComment, // Global order notes
     items: items,
     total: total,
     createdAt: now,
@@ -1819,6 +1814,7 @@ function placeOrder(){
     document.getElementById('cust-name').value = '';
     document.getElementById('cust-phone').value = '';
     document.getElementById('cust-comment').value = '';
+    document.getElementById('cust-drink-comment').value = '';
     
     const nb = document.getElementById('new-badge');
     if (nb) {
@@ -1826,10 +1822,12 @@ function placeOrder(){
       setTimeout(()=>nb.style.display='none',4000);
     }
     showTicketPage(ticketId);
+  }).catch(err => {
+    alert("Error placing order: " + err.message);
   });
 }
 
-/* ---- TICKET ---- */
+/* ---- TICKET ROOM ---- */
 function showTicketPage(id){ goPage('ticket'); renderTicket(id); }
 function renderTicket(id){
   const o = orders.find(x=>x.id===id);
@@ -1849,13 +1847,17 @@ function renderTicket(id){
   const itemsHtml = o.items.map(i => {
     const variantText = i.variantLabel ? ` (${i.variantLabel})` : '';
     const addonsText = i.addons && i.addons.length ? `<div style="font-size:10px; opacity:0.8; padding-left: 6px;">+ ${i.addons.join(', ')}</div>` : '';
+    // Display item-specific comments on Customer Ticket
+    const itemCommentText = i.comment ? `<div style="font-size:11.5px; color:#E65100; font-weight:600; padding-left: 6px; margin-top:2px;"><i class="ti ti-message-circle"></i> ${i.comment}</div>` : '';
+    
     return `
-      <div class="trow" style="flex-direction:column; align-items:flex-start; padding:4px 0; border-bottom:0.5px solid rgba(0,0,0,0.05);">
+      <div class="trow" style="flex-direction:column; align-items:flex-start; padding:6px 0; border-bottom:0.5px solid rgba(0,0,0,0.05);">
         <div style="display:flex; justify-content:space-between; width:100%;">
-          <span>${i.name}${variantText} ×${i.qty}</span>
-          <span>${i.price * i.qty} K</span>
+          <span style="font-weight:600;">${i.name}${variantText} ×${i.qty}</span>
+          <span style="font-weight:500;">${i.price * i.qty} K</span>
         </div>
         ${addonsText}
+        ${itemCommentText}
       </div>
     `;
   }).join('');
@@ -1869,11 +1871,10 @@ function renderTicket(id){
     </div>
   </div>`).join('');
 
-  // DELAY NOTIFICATION BANNER
   let delayAlertHtml = '';
   if (o.delayedAlert === true) {
     delayAlertHtml = `
-      <div style="background:#FFF3E0; border:1px solid #FFCC80; border-radius:12px; padding:12px 14px; margin:14px 0; display:flex; gap:10px; align-items:flex-start;">
+      <div style="background:#FFF3E0; border:1px solid #FFCC80; border-radius:12px; padding:12px 14px; margin:14px 0; display:flex; gap:10px; align-items:flex-start; text-align:left;">
         <i class="ti ti-bell-ringing" style="font-size:20px; color:#E65100; margin-top:2px;" aria-hidden="true"></i>
         <div style="font-size:12px; color:#E65100; font-weight:500; line-height:1.5;">
           ຕອນນີ້ມີອໍເດີ້ໜ້າຮ້ານຫຼາຍສຳລັບອໍເດີ້ take away ຂອງລູກຄ້າອາດ delay ເລັກນ້ອຍ ທາງເຮົາຈະພະຍາຍາມເຮັດເຄື່ອງດື່ມລູກຄ້າໃຫ້ແລ້ວທັນເວລາ, ຂອບໃຈລູກຄ້າທີ່ລໍຖ້າ <br>
@@ -1934,14 +1935,14 @@ function renderTicket(id){
   }
 
   el.innerHTML = `
-  <div class="ticket-card">
+  <div class="ticket-card" style="text-align:center;">
     <div class="ticket-hdr ${hdr}">
       <div class="tid">${o.id}</div>
       <div class="ttype">${o.type} · ${o.createdAt}</div>
       <div style="font-size:12px; margin-top:6px; font-weight:500;">
         <i class="ti ti-user" aria-hidden="true"></i> ${o.customerName || 'N/A'} · <i class="ti ti-phone" aria-hidden="true"></i> ${o.customerPhone || 'N/A'}
       </div>
-      ${o.comment ? `<div style="font-size:11px; background:rgba(0,0,0,0.1); padding:4px 8px; border-radius:4px; display:inline-block; margin-top:6px; font-weight:500;">ໝາຍເຫດ: ${o.comment}</div>` : ''}
+      ${o.comment ? `<div style="font-size:11px; background:rgba(0,0,0,0.1); padding:4px 8px; border-radius:4px; display:inline-block; margin-top:6px; font-weight:500;">ໝາຍເຫດລວມ: ${o.comment}</div>` : ''}
     </div>
     
     ${delayAlertHtml}
@@ -1951,21 +1952,43 @@ function renderTicket(id){
       <div class="status-label">${capitalize(o.status)}</div>
       <div class="status-sub">${msg}</div>
     </div>
-    <div class="ticket-items">
+    <div class="ticket-items" style="text-align:left;">
       ${itemsHtml}
       <div class="ttotal"><span>Total</span><span>${o.total} K</span></div>
     </div>
-    <div class="ticket-tl">${tlHtml}</div>
+    <div class="ticket-tl" style="text-align:left;">
+      ${tlHtml}
+    </div>
     ${qrHtml}
   </div>
-  <button class="confirm-btn" style="background:var(--surface-2); color:var(--text-primary); border:1.5px solid var(--border-accent); margin-top:14px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="startNewOrder()">
+  <button class="confirm-btn" style="background:var(--surface-0); color:var(--text-accent); border:1.5px solid var(--border-accent); margin-top:14px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="startNewOrder()">
     <i class="ti ti-plus"></i> ສັ່ງເມນູເພີ່ມ (ແຍກບິນໃໝ່ / Order More)
   </button>
   <div class="refresh-note" style="margin-top:14px;"><span class="spin-icon"><i class="ti ti-refresh" aria-hidden="true"></i></span> Live synchronized via Firebase</div>
   `;
 }
 
-/* ---- ADMIN TICKETS VIEW ---- */
+/* ---- ADMIN ADVANCE PROCESS ---- */
+function advance(id){
+  const o = orders.find(x=>x.id===id); if(!o) return;
+  const map = {waiting:'making',making:'ready',ready:'completed',paid:'completed'};
+  if(!map[o.status]) return;
+  const now = fmt(new Date());
+  const nextStatus = map[o.status];
+  const tl = JSON.parse(JSON.stringify(o.timeline));
+  
+  if(nextStatus==='making'){ tl[1].done=true; tl[1].time=now; tl[2].active=true; }
+  if(nextStatus==='ready'){  tl[2].done=true; tl[2].active=false; tl[2].time=now; tl[3].done=true; tl[3].time=now; }
+  
+  updateOrderStatusInDb(id, nextStatus, tl);
+}
+function viewCust(id){ myTicketId=id; goView('customer'); showTicketPage(id); }
+
+function getElapsed(o) {
+  if (!o.timestamp) return o.elapsed || 0;
+  return Math.floor((Date.now() - o.timestamp) / 60000);
+}
+
 function renderAdmin(){
   const grid = document.getElementById('admin-grid');
   if(!grid) return;
@@ -1988,7 +2011,7 @@ function renderAdmin(){
           <div style="font-size:11px; font-weight:500; margin-top:2px;">
             <i class="ti ti-user" aria-hidden="true"></i> ${o.customerName || 'Customer'} (${o.customerPhone || ''})
           </div>
-          ${o.comment ? `<div style="font-size:11.5px; background:rgba(0,0,0,0.15); padding:3px 6px; border-radius:4px; display:inline-block; margin-top:4px; font-weight:500; border:0.5px solid rgba(255,255,255,0.2);">ໝາຍເຫດ: ${o.comment}</div>` : ''}
+          ${o.comment ? `<div style="font-size:11px; background:rgba(0,0,0,0.15); padding:3px 6px; border-radius:4px; display:inline-block; margin-top:4px; font-weight:500;">ໝາຍເຫດລວມ: ${o.comment}</div>` : ''}
         </div>
         <i class="ti ti-coffee" style="font-size:18px;opacity:.75" aria-hidden="true"></i>
       </div>
@@ -1996,13 +2019,17 @@ function renderAdmin(){
         ${o.items.map(i => {
           const variantText = i.variantLabel ? ` (${i.variantLabel})` : '';
           const addonsText = i.addons && i.addons.length ? `<div style="font-size:10px; color:var(--text-muted); padding-left: 6px;">+ ${i.addons.join(', ')}</div>` : '';
+          // Display drink-specific comments on Admin Card
+          const commentText = i.comment ? `<div style="font-size:11.5px; color:#E65100; font-weight:600; padding-left: 6px; margin-top:2px;"><i class="ti ti-message-circle"></i> ${i.comment}</div>` : '';
+          
           return `
             <div class="card-item" style="flex-direction:column; align-items:flex-start; gap:2px; padding:4px 0;">
               <div style="display:flex; justify-content:space-between; width:100%; font-size:12px;">
-                <span>${i.name}${variantText}</span>
+                <span style="font-weight:600;">${i.name}${variantText}</span>
                 <span style="color:var(--text-muted); font-weight:500;">×${i.qty}</span>
               </div>
               ${addonsText}
+              ${commentText}
             </div>
           `;
         }).join('')}
@@ -2077,8 +2104,8 @@ function goView(v){
   }
 }
 function goPage(p){
-  document.getElementById('page-menu').classList.toggle('active',p==='menu');
-  document.getElementById('page-ticket').classList.toggle('active',p==='ticket');
+  document.getElementById('page-menu').classList.toggle('active', p==='menu');
+  document.getElementById('page-ticket').classList.toggle('active', p==='ticket');
 }
 function startNewOrder(){ myTicketId=null; cart={}; renderMenu(); goPage('menu'); }
 function setBtnOn(id){ ['btn-admin','btn-cust'].forEach(b=>document.getElementById(b).classList.toggle('on',b===id)); }
@@ -2093,10 +2120,10 @@ function timerTxt(o){
   return elapsed>o.maxTime?`Delayed ${elapsed-o.maxTime}m`:`${elapsed}m / est. ${o.maxTime}m`;
 }
 
-// Initial view boot
+// Initial Boot view
 goView('customer');
 
-// Refresh clock loop
+// Auto update timer displays every minute locally
 setInterval(()=>{
   renderAdmin();
 },60000);
