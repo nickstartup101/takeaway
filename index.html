@@ -477,7 +477,7 @@
 </div>
 
 <!-- ===== CUSTOMER VIEW ===== -->
-<div id="customer-view"> <!-- DEFAULT DISPLAY: Visible to prevent blank screens -->
+<div id="customer-view"> 
   <div class="page active" id="page-menu" style="height:100%; display:flex; flex-direction:column;">
     <div class="menu-hero" style="flex-shrink: 0;">
       <img id="menu-display" alt="La Dolce menu" style="display:none">
@@ -493,6 +493,7 @@
       <div class="cust-input-group">
         <input type="text" id="cust-name" placeholder="ຊື່ຂອງທ່ານ / Name" class="cust-input" oninput="validateOrder()">
         <input type="tel" id="cust-phone" placeholder="ເບີຕິດຕໍ່ / Contact Number" class="cust-input" oninput="validateOrder()">
+        <input type="text" id="cust-comment" placeholder="ໝາຍເຫດ (ເຊັ່ນ: ຫວານໜ້ອຍ, ບໍ່ໃສ່ນ້ຳຕານ...) / Comments" class="cust-input">
       </div>
 
       <!-- Categories Navigation Slider -->
@@ -578,7 +579,7 @@ const firebaseConfig = {
   measurementId: "G-VL8CHGGPPW"
 };
 
-// EXCEPTION-SAFE FIREBASE HYBRID CONNECTION
+// EXCEPTION-SAFE FIREBASE CONNECTION
 let db = null;
 let isFirebaseConnected = false;
 
@@ -589,10 +590,10 @@ try {
     isFirebaseConnected = true;
     console.log("Firebase initialized successfully.");
   } else {
-    console.warn("Firebase SDK not loaded. App is running in Local Storage offline mode.");
+    console.warn("Firebase SDK not loaded. Running in local fallback mode.");
   }
 } catch (e) {
-  console.error("Firebase init failed, switching to Local Storage fallback:", e);
+  console.error("Firebase init failed, switching to fallback:", e);
 }
 
 const CORRECT_PIN = '7788';
@@ -613,43 +614,43 @@ const SEED_CATEGORIES = {
     {id:"c2", name:"Cappucino",lao:"ຄາປູຊິໂນ້",prices:[34,36,52], category:"Coffee"},
     {id:"c3", name:"Espresso",lao:"ເອສເພຣສໂຊ",prices:[34,36,52], category:"Coffee"},
     {id:"c4", name:"Mocca",lao:"ມ໊ອກກາ",prices:[34,38,52], category:"Coffee"},
-    {id:"c5", name:"Caramel Machiato",lao:"ຄາຣາເມວ ມາກຽໂຕ",prices:[35,39], category:"Coffee"},
-    {id:"c6", name:"Americano",lao:"ອາເມຣິກาໂນ",prices:[32,36], category:"Coffee"},
-    {id:"c7", name:"Americano Honey",lao:"ອາເມຣິກາໂນນ້ຳເຜິ້ງ",prices:[40], category:"Coffee"},
-    {id:"c8", name:"Americano Honey Lemon",lao:"ອາເມຣິກາໂນນ້ຳເຜິ້ງເລໝອນ",prices:[45], category:"Coffee"},
-    {id:"c9", name:"Coconut Coffee",lao:"ໂຄໂຄດຄ໋ອຟຟີ",prices:[48], category:"Coffee"},
+    {id:"c5", name:"Caramel Machiato",lao:"ຄາຣາເມວ ມາກຽໂຕ",prices:[null,35,39], category:"Coffee"},
+    {id:"c6", name:"Americano",lao:"ອາເມຣິກາໂນ",prices:[32,36,null], category:"Coffee"},
+    {id:"c7", name:"Americano Honey",lao:"ອາເມຣິກາໂນນ້ຳເຜິ້ງ",prices:[null,40,null], category:"Coffee"},
+    {id:"c8", name:"Americano Honey Lemon",lao:"ອາເມຣິກາໂນນ້ຳເຜິ້ງເລໝອນ",prices:[null,45,null], category:"Coffee"},
+    {id:"c9", name:"Coconut Coffee",lao:"ໂຄໂຄດຄ໋ອຟຟີ",prices:[null,48,null], category:"Coffee"},
   ],
   "Signature Coffee":[
-    {id:"sc1", name:"Creamy Coffee",lao:"ຄຣີມີ້ຄ໋ອຟຟີ",prices:[59],badge:"SIG", category:"Signature Coffee"},
-    {id:"sc2", name:"La Dolce Coffee",lao:"ລາໂດລເຊຄ໋ອຟຟີ",prices:[64],badge:"SIG", category:"Signature Coffee"},
-    {id:"sc3", name:"Coffee Cloud",lao:"ຄ໋ອຟຟີຄລາວ",prices:[62],badge:"SIG", category:"Signature Coffee"},
+    {id:"sc1", name:"Creamy Coffee",lao:"ຄຣີມີ້ຄ໋ອຟຟີ",prices:[null,59,null],badge:"SIG", category:"Signature Coffee"},
+    {id:"sc2", name:"La Dolce Coffee",lao:"ລາໂດລເຊຄ໋ອຟຟີ",prices:[null,64,null],badge:"SIG", category:"Signature Coffee"},
+    {id:"sc3", name:"Coffee Cloud",lao:"ຄ໋ອຟຟີຄລາວ",prices:[null,62,null],badge:"SIG", category:"Signature Coffee"},
   ],
   "Matcha":[
-    {id:"m1", name:"Pour Matcha",lao:"ພຽວມັດຊະ",prices:[35], category:"Matcha"},
-    {id:"m2", name:"Matcha Latte",lao:"ມັດຊະລາເຕ້",prices:[49], category:"Matcha"},
-    {id:"m3", name:"Coconut Matcha",lao:"ໂຄໂຄດມັດຊະ",prices:[45], category:"Matcha"},
-    {id:"m4", name:"Matcha Cloud",lao:"ມັດຊະຄລາວ",prices:[62], category:"Matcha"},
-    {id:"m5", name:"Matcha Creamy Frappe",lao:"ມັດຊະຄຣີມີ້ເຟຣັບເປ້",prices:[75,85],badge:"NEW",sizeLabels:["Normal Milk","Oat Milk"], category:"Matcha"},
-    {id:"m6", name:"Cloud No.3",lao:"ຄລາວ ເລກ 3",prices:[65],badge:"SIG", category:"Matcha"},
+    {id:"m1", name:"Pour Matcha",lao:"ພຽວມັດຊະ",prices:[null,35,null], category:"Matcha"},
+    {id:"m2", name:"Matcha Latte",lao:"ມັດຊະລາເຕ້",prices:[null,49,null], category:"Matcha"},
+    {id:"m3", name:"Coconut Matcha",lao:"ໂຄໂຄດມັດຊະ",prices:[null,45,null], category:"Matcha"},
+    {id:"m4", name:"Matcha Cloud",lao:"ມັດຊະຄລາວ",prices:[null,62,null], category:"Matcha"},
+    {id:"m5", name:"Matcha Creamy Frappe",lao:"ມັດຊະຄຣີມີ້ເຟຣັບເປ້",prices:[75,85,null],badge:"NEW",sizeLabels:["Normal Milk","Oat Milk"], category:"Matcha"},
+    {id:"m6", name:"Cloud No.3",lao:"ຄລາວ ເລກ 3",prices:[null,65,null],badge:"SIG", category:"Matcha"},
   ],
   "Non-Coffee":[
     {id:"nc1", name:"Cocoa",lao:"ໂກໂກ້",prices:[34,36,52], category:"Non-Coffee"},
-    {id:"nc2", name:"Double Choc",lao:"ດັບເບິ້ລໂກຊ໊ອກ",prices:[67], category:"Non-Coffee"},
+    {id:"nc2", name:"Double Choc",lao:"ດັບເບິ້ລໂກຊ໊ອກ",prices:[null,67,null], category:"Non-Coffee"},
   ],
   "Tea & Lemon":[
-    {id:"tl1", name:"Green Tea Honey Lemon",lao:"ກຣີນທີ ນ້ຳເຜິ້ງເລໝອນ",prices:[36], category:"Tea & Lemon"},
-    {id:"tl2", name:"Thai Tea Cream Cheese",lao:"ຊາໄທ ຄຣີມຊີສ",prices:[56], category:"Tea & Lemon"},
-    {id:"tl3", name:"Thai Tea Lemon",lao:"ຊາໄທ ເລໝອນ",prices:[36], category:"Tea & Lemon"},
-    {id:"tl4", name:"Green Tea Latte",lao:"ຊາຂຽວລາເຕ້",prices:[36,52],sizeLabels:["Iced","Blended"], category:"Tea & Lemon"},
+    {id:"tl1", name:"Green Tea Honey Lemon",lao:"ກຣີນທີ ນ້ຳເຜິ້ງເລໝອນ",prices:[null,36,null], category:"Tea & Lemon"},
+    {id:"tl2", name:"Thai Tea Cream Cheese",lao:"ຊາໄທ ຄຣີມຊີສ",prices:[null,56,null], category:"Tea & Lemon"},
+    {id:"tl3", name:"Thai Tea Lemon",lao:"ຊາໄທ ເລໝອນ",prices:[null,36,null], category:"Tea & Lemon"},
+    {id:"tl4", name:"Green Tea Latte",lao:"ຊາຂຽວລາເຕ້",prices:[null,36,52],sizeLabels:["Hot","Iced","Blended"], category:"Tea & Lemon"},
   ],
   "Fresh Drinks":[
-    {id:"fd1", name:"Fresh Pop Soda",lao:"ເຟຣສປ໊ອບໂຊດາ",prices:[34], category:"Fresh Drinks"},
-    {id:"fd2", name:"Green Tea Mint Soda",lao:"ກຣີນທີ ມິນໂຊດາ",prices:[34], category:"Fresh Drinks"},
-    {id:"fd3", name:"Ocean Lychee",lao:"ໂອຊຽນລິນຈີ",prices:[34], category:"Fresh Drinks"},
-    {id:"fd4", name:"Plum Sprite",lao:"ບ໊ວຍສະໄປ໋",prices:[34], category:"Fresh Drinks"},
-    {id:"fd5", name:"Rainbow Lychee",lao:"ເຣນໂບລິນຈີ",prices:[36], category:"Fresh Drinks"},
-    {id:"fd6", name:"Red Honey Lemon",lao:"ເຣດ ນ້ຳເຜິ້ງເລໝອນ",prices:[36], category:"Fresh Drinks"},
-    {id:"fd7", name:"Plum Honey Lemon",lao:"ບ໊ວຍ ນ້ຳເຜິ້ງເລໝອນ",prices:[34], category:"Fresh Drinks"},
+    {id:"fd1", name:"Fresh Pop Soda",lao:"ເຟຣສປ໊ອບໂຊດາ",prices:[null,34,null], category:"Fresh Drinks"},
+    {id:"fd2", name:"Green Tea Mint Soda",lao:"ກຣີນທີ ມິນໂຊດາ",prices:[null,34,null], category:"Fresh Drinks"},
+    {id:"fd3", name:"Ocean Lychee",lao:"ໂອຊຽນລິນຈີ",prices:[null,34,null], category:"Fresh Drinks"},
+    {id:"fd4", name:"Plum Sprite",lao:"ບ໊ວຍສະໄປ໋",prices:[null,34,null], category:"Fresh Drinks"},
+    {id:"fd5", name:"Rainbow Lychee",lao:"ເຣນໂບລິນຈີ",prices:[null,36,null], category:"Fresh Drinks"},
+    {id:"fd6", name:"Red Honey Lemon",lao:"ເຣດ ນ້ຳເຜິ້ງເລໝອນ",prices:[null,36,null], category:"Fresh Drinks"},
+    {id:"fd7", name:"Plum Honey Lemon",lao:"ບ໊ວຍ ນ້ຳເຜິ້ງເລໝອນ",prices:[null,34,null], category:"Fresh Drinks"},
   ],
 };
 
@@ -669,7 +670,6 @@ let knownOrderIds = new Set();
 let isFirstLoad = true;
 let lastTicketStatus = null;
 
-// Dynamic Screen/Device detector
 function detectDevice() {
   const width = window.innerWidth;
   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -726,7 +726,7 @@ let tempSelection = {
   addons: {} 
 };
 
-/* ---- DATABASE CONNECTIONS WRAPPER ---- */
+/* ---- REAL-TIME CONNECTIONS WRAPPER ---- */
 if (isFirebaseConnected) {
   db.collection('settings').doc('config').onSnapshot(doc => {
     if (doc.exists) {
@@ -748,7 +748,7 @@ if (isFirebaseConnected) {
         if (qrNote) qrNote.textContent = 'QR image uploaded and ready';
       }
     }
-  }, err => console.error("Config listener error: ", err));
+  }, err => console.error("Config error:", err));
 
   db.collection('menu').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
     if (snapshot.empty) {
@@ -765,7 +765,7 @@ if (isFirebaseConnected) {
     MENU = grouped;
     renderMenu();
     renderAdminMenuList();
-  }, err => console.error("Menu listener error: ", err));
+  }, err => console.error("Menu sync error:", err));
 
   db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
     if (snapshot.empty) {
@@ -802,10 +802,10 @@ if (isFirebaseConnected) {
     if (myTicketId) {
       renderTicket(myTicketId);
     }
-  }, err => console.error("Orders listener error: ", err));
+  }, err => console.error("Orders sync error:", err));
 } else {
-  // OFFLINE MODE: Load configuration from LocalStorage
-  console.log("Fallback offline mode actively running...");
+  // OFFLINE BACKUP MODE (LocalStorage Hybrid)
+  console.log("Offline mode active.");
   menuDataUrl = localStorage.getItem('la_dolce_menu_image');
   if (menuDataUrl) {
     const t = document.getElementById('menu-thumb');
@@ -837,8 +837,8 @@ if (isFirebaseConnected) {
     orders = JSON.parse(localOrders);
   } else {
     orders = [
-      {id:'#1001', status:'making', type:'Take Away', customerName:'ສົມສັກ (Somsack)', customerPhone:'020 5555 1234', items:[{name:'Creamy Coffee (SIG)',variantLabel:'Standard',qty:1,price:59,addons:[]}], total:59, createdAt:'09:00', timestamp:Date.now()-480000, timeline:[{label:'Order placed',time:'09:00',done:true},{label:'Barista accepted',time:'09:01',done:true},{label:'Making drink',time:null,done:false,active:true},{label:'Ready for pickup',time:null,done:false}]},
-      {id:'#1002', status:'waiting', type:'Take Away', customerName:'ແກ້ວ (Keo)', customerPhone:'020 7777 5678', items:[{name:'Latte',variantLabel:'Iced',qty:1,price:36,addons:['Oat milk']}], total:36, createdAt:'09:05', timestamp:Date.now()-180000, timeline:[{label:'Order placed',time:'09:05',done:true},{label:'Barista accepted',time:null,done:false},{label:'Making drink',time:null,done:false,active:false},{label:'Ready for pickup',time:null,done:false}]}
+      {id:'#1001', status:'making', type:'Take Away', customerName:'ສົມສັກ (Somsack)', customerPhone:'020 5555 1234', comment:'ຫວານໜ້ອຍ', items:[{name:'Creamy Coffee (SIG)',variantLabel:'Standard',qty:1,price:59,addons:[]}], total:59, createdAt:'09:00', timestamp:Date.now()-480000, timeline:[{label:'Order placed',time:'09:00',done:true},{label:'Barista accepted',time:'09:01',done:true},{label:'Making drink',time:null,done:false,active:true},{label:'Ready for pickup',time:null,done:false}]},
+      {id:'#1002', status:'waiting', type:'Take Away', customerName:'ແກ້ວ (Keo)', customerPhone:'020 7777 5678', comment:'', items:[{name:'Latte',variantLabel:'Iced',qty:1,price:36,addons:['Oat milk']}], total:36, createdAt:'09:05', timestamp:Date.now()-180000, timeline:[{label:'Order placed',time:'09:05',done:true},{label:'Barista accepted',time:null,done:false},{label:'Making drink',time:null,done:false,active:false},{label:'Ready for pickup',time:null,done:false}]}
     ];
     localStorage.setItem('la_dolce_orders', JSON.stringify(orders));
   }
@@ -938,6 +938,27 @@ function addOrderToDb(newOrder) {
   }
 }
 
+function sendDelayAlert(id) {
+  if (isFirebaseConnected) {
+    db.collection('orders').doc(id).update({
+      delayedAlert: true
+    }).then(() => {
+      alert("ສົ່ງແຈ້ງເຕືອນລໍຖ້າໃຫ້ລູກຄ້າສຳເລັດ! (Sent successfully)");
+    });
+  } else {
+    const idx = orders.findIndex(o => o.id === id);
+    if (idx !== -1) {
+      orders[idx].delayedAlert = true;
+      localStorage.setItem('la_dolce_orders', JSON.stringify(orders));
+      renderAdmin();
+      if (myTicketId === id) {
+        renderTicket(id);
+      }
+      alert("ສົ່ງແຈ້ງເຕືອນລໍຖ້າໃຫ້ລູກຄ້າສຳເລັດ! (Local Offline Mode)");
+    }
+  }
+}
+
 function seedMenuIfEmpty() {
   const batch = db.batch();
   let count = 0;
@@ -960,7 +981,7 @@ function seedMenuIfEmpty() {
   batch.commit();
 }
 
-/* ---- PIN CODE ---- */
+/* ---- PIN SECURITY ---- */
 function tryGoAdmin(){
   if(adminUnlocked){ showAdminView(); return; }
   showPinScreen();
@@ -1217,7 +1238,7 @@ function toggleAdminSettingsPanel() {
   }
 }
 
-/* ---- DAILY REPORT SYSTEM ---- */
+/* ---- DAILY REPORT ---- */
 function openDailyReport() {
   const sales = orders.filter(o => o.status === 'completed' || o.status === 'paid');
   const el = document.getElementById('report-content');
@@ -1353,8 +1374,16 @@ function renderAdminMenuList() {
   }
 
   container.innerHTML = flatMenu.map(m => {
-    const prices = m.prices || (m.price ? [m.price] : [0]);
-    const priceTags = prices.map(p => `${p} K`).join(' / ');
+    const prices = m.prices || [];
+    const labels = m.sizeLabels || DEF_LABELS;
+    const activeVariants = [];
+    prices.forEach((p, idx) => {
+      if (p !== null && p !== undefined) {
+        activeVariants.push(`${labels[idx] || 'Option'}: ${p} K`);
+      }
+    });
+    const priceTags = activeVariants.length ? activeVariants.join(' / ') : 'No prices set';
+    
     return `
       <div class="admin-menu-row">
         <div class="admin-menu-details" style="flex:1;">
@@ -1384,10 +1413,10 @@ function editMenuItem(id) {
   document.getElementById('menu-item-lao').value = item.lao || '';
   document.getElementById('menu-item-category').value = item.category || 'Coffee';
   
-  const prices = item.prices || (item.price ? [item.price] : []);
-  document.getElementById('menu-item-price-0').value = prices[0] !== undefined ? prices[0] : '';
-  document.getElementById('menu-item-price-1').value = prices[1] !== undefined ? prices[1] : '';
-  document.getElementById('menu-item-price-2').value = prices[2] !== undefined ? prices[2] : '';
+  const prices = item.prices || [];
+  document.getElementById('menu-item-price-0').value = (prices[0] !== undefined && prices[0] !== null) ? prices[0] : '';
+  document.getElementById('menu-item-price-1').value = (prices[1] !== undefined && prices[1] !== null) ? prices[1] : '';
+  document.getElementById('menu-item-price-2').value = (prices[2] !== undefined && prices[2] !== null) ? prices[2] : '';
   
   document.getElementById('menu-item-labels').value = item.sizeLabels ? item.sizeLabels.join(', ') : '';
 
@@ -1418,10 +1447,12 @@ function saveMenuItem() {
   const p1 = document.getElementById('menu-item-price-1').value;
   const p2 = document.getElementById('menu-item-price-2').value;
 
-  const prices = [];
-  if (p0 !== '') prices.push(Number(p0));
-  if (p1 !== '') prices.push(Number(p1));
-  if (p2 !== '') prices.push(Number(p2));
+  // Preserve positions for Hot, Iced, and Blended variants
+  const prices = [
+    p0 !== '' ? Number(p0) : null,
+    p1 !== '' ? Number(p1) : null,
+    p2 !== '' ? Number(p2) : null
+  ];
 
   const labelsInput = document.getElementById('menu-item-labels').value.trim();
   let sizeLabels = null;
@@ -1429,7 +1460,10 @@ function saveMenuItem() {
     sizeLabels = labelsInput.split(',').map(s => s.trim());
   }
 
-  if (!name || prices.length === 0) {
+  // Ensure there is at least one non-null price offering
+  const hasPriceOffer = prices.some(p => p !== null);
+
+  if (!name || !hasPriceOffer) {
     alert('Please fill out the drink name and at least one price variant.');
     return;
   }
@@ -1454,7 +1488,7 @@ function saveMenuItem() {
     })
     .catch(err => {
       console.error("Save error: ", err);
-      alert('ເກີດຂໍ́ຜິດພາດໃນການບັນທຶກ: ' + err.message);
+      alert('ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ: ' + err.message);
     });
 }
 
@@ -1494,28 +1528,36 @@ function openCustomizeModal(itemId) {
   if (!drink) return;
 
   tempSelection.itemId = itemId;
-  tempSelection.variantIndex = 0;
   tempSelection.addons = {};
 
   document.getElementById('cust-drink-name').textContent = drink.name;
   document.getElementById('cust-drink-lao').textContent = drink.lao || '';
 
   const variantContainer = document.getElementById('variant-options');
-  const prices = drink.prices || (drink.price ? [drink.price] : [0]);
+  const prices = drink.prices || [];
   const labels = drink.sizeLabels || DEF_LABELS;
   
-  variantContainer.innerHTML = prices.map((p, idx) => {
-    const label = labels[idx] || (prices.length === 1 ? 'Standard' : `Option ${idx+1}`);
-    return `
-      <button class="vbtn ${idx === tempSelection.variantIndex ? 'on' : ''}" 
-              id="opt-variant-${idx}" 
-              onclick="selectTempVariant(${idx})" 
-              style="flex:1; text-align:center; padding:10px; border:0.5px solid var(--border); border-radius:8px; font-size:12px; cursor:pointer;">
-        <div style="font-weight:600;">${label}</div>
-        <div style="font-size:11px; opacity:0.8; margin-top:2px;">${p} K</div>
-      </button>
-    `;
-  }).join('');
+  // Set default selection index to the first available non-null price index
+  let firstAvailableIdx = prices.findIndex(p => p !== null && p !== undefined);
+  if (firstAvailableIdx === -1) firstAvailableIdx = 0;
+  tempSelection.variantIndex = firstAvailableIdx;
+
+  let variantsHtml = '';
+  prices.forEach((p, idx) => {
+    if (p !== null && p !== undefined) {
+      const label = labels[idx] || (prices.length === 1 ? 'Standard' : `Option ${idx+1}`);
+      variantsHtml += `
+        <button class="vbtn ${idx === tempSelection.variantIndex ? 'on' : ''}" 
+                id="opt-variant-${idx}" 
+                onclick="selectTempVariant(${idx})" 
+                style="flex:1; text-align:center; padding:10px; border:0.5px solid var(--border); border-radius:8px; font-size:12px; cursor:pointer;">
+          <div style="font-weight:600;">${label}</div>
+          <div style="font-size:11px; opacity:0.8; margin-top:2px;">${p} K</div>
+        </button>
+      `;
+    }
+  });
+  variantContainer.innerHTML = variantsHtml;
 
   const addonContainer = document.getElementById('addon-options');
   addonContainer.innerHTML = ADDONS.map((addon, idx) => {
@@ -1537,8 +1579,9 @@ function openCustomizeModal(itemId) {
 function selectTempVariant(idx) {
   tempSelection.variantIndex = idx;
   const buttons = document.querySelectorAll('[id^="opt-variant-"]');
-  buttons.forEach((btn, i) => {
-    btn.classList.toggle('on', i === idx);
+  buttons.forEach((btn) => {
+    const btnId = btn.id;
+    btn.classList.toggle('on', btnId === `opt-variant-${idx}`);
   });
   updateCustomizeTotalPrice();
 }
@@ -1560,8 +1603,8 @@ function updateCustomizeTotalPrice() {
   }
   if (!drink) return;
 
-  const prices = drink.prices || (drink.price ? [drink.price] : [0]);
-  const basePrice = prices[tempSelection.variantIndex] || prices[0];
+  const prices = drink.prices || [];
+  const basePrice = prices[tempSelection.variantIndex] || 0;
   let addonTotal = 0;
   for (let key in tempSelection.addons) {
     addonTotal += tempSelection.addons[key];
@@ -1582,10 +1625,10 @@ function addCustomizedToCart() {
   if (!drink) return;
 
   const idx = tempSelection.variantIndex;
-  const prices = drink.prices || (drink.price ? [drink.price] : [0]);
+  const prices = drink.prices || [];
   const labels = drink.sizeLabels || DEF_LABELS;
   const variantLabel = labels[idx] || (prices.length === 1 ? 'Standard' : `Option ${idx+1}`);
-  const variantPrice = prices[idx] || prices[0];
+  const variantPrice = prices[idx] || 0;
 
   const selectedAddons = [];
   for (let name in tempSelection.addons) {
@@ -1651,9 +1694,10 @@ function renderMenu(){
 
     const qtyBadge = totalQty > 0 ? `<span style="background:var(--border-accent); color:white; font-size:11px; padding:2px 6px; border-radius:10px; font-weight:600; margin-right:6px;">${totalQty}</span>` : '';
 
-    const prices = m.prices || (m.price ? [m.price] : [0]);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
+    const prices = m.prices || [];
+    const validPrices = prices.filter(p => p !== null && p !== undefined);
+    const minPrice = Math.min(...validPrices);
+    const maxPrice = Math.max(...validPrices);
     const priceStr = minPrice === maxPrice ? `${minPrice} K` : `${minPrice} - ${maxPrice} K`;
 
     return `
@@ -1724,6 +1768,7 @@ function renderCartSummary() {
 function placeOrder(){
   const customerName = document.getElementById('cust-name').value.trim();
   const customerPhone = document.getElementById('cust-phone').value.trim();
+  const customerComment = document.getElementById('cust-comment').value.trim();
   if (!customerName || !customerPhone) return;
 
   const keys = Object.keys(cart);
@@ -1751,12 +1796,14 @@ function placeOrder(){
     type: 'Take Away',
     customerName: customerName,
     customerPhone: customerPhone,
+    comment: customerComment,
     items: items,
     total: total,
     createdAt: now,
     elapsed: 0,
     maxTime: 12,
     timestamp: Date.now(),
+    delayedAlert: false,
     timeline: [
       {label:'Order placed',time:now,done:true},
       {label:'Barista accepted',time:null,done:false},
@@ -1771,6 +1818,7 @@ function placeOrder(){
     cart = {};
     document.getElementById('cust-name').value = '';
     document.getElementById('cust-phone').value = '';
+    document.getElementById('cust-comment').value = '';
     
     const nb = document.getElementById('new-badge');
     if (nb) {
@@ -1820,6 +1868,20 @@ function renderTicket(id){
       ${t.time?`<div class="tl-time">${t.time}</div>`:''}
     </div>
   </div>`).join('');
+
+  // DELAY NOTIFICATION BANNER
+  let delayAlertHtml = '';
+  if (o.delayedAlert === true) {
+    delayAlertHtml = `
+      <div style="background:#FFF3E0; border:1px solid #FFCC80; border-radius:12px; padding:12px 14px; margin:14px 0; display:flex; gap:10px; align-items:flex-start;">
+        <i class="ti ti-bell-ringing" style="font-size:20px; color:#E65100; margin-top:2px;" aria-hidden="true"></i>
+        <div style="font-size:12px; color:#E65100; font-weight:500; line-height:1.5;">
+          ຕອນນີ້ມີອໍເດີ້ໜ້າຮ້ານຫຼາຍສຳລັບອໍເດີ້ take away ຂອງລູກຄ້າອາດ delay ເລັກນ້ອຍ ທາງເຮົາຈະພະຍາຍາມເຮັດເຄື່ອງດື່ມລູກຄ້າໃຫ້ແລ້ວທັນເວລາ, ຂອບໃຈລູກຄ້າທີ່ລໍຖ້າ <br>
+          <span style="font-style:italic; font-size:11px; font-weight:400; color:#b25300;">Thank you for allowing us to be part of your day.</span>
+        </div>
+      </div>
+    `;
+  }
 
   let qrHtml = '';
   if(o.status === 'ready' || o.status === 'paid'){
@@ -1879,7 +1941,11 @@ function renderTicket(id){
       <div style="font-size:12px; margin-top:6px; font-weight:500;">
         <i class="ti ti-user" aria-hidden="true"></i> ${o.customerName || 'N/A'} · <i class="ti ti-phone" aria-hidden="true"></i> ${o.customerPhone || 'N/A'}
       </div>
+      ${o.comment ? `<div style="font-size:11px; background:rgba(0,0,0,0.1); padding:4px 8px; border-radius:4px; display:inline-block; margin-top:6px; font-weight:500;">ໝາຍເຫດ: ${o.comment}</div>` : ''}
     </div>
+    
+    ${delayAlertHtml}
+
     <div class="ticket-status-block ${hdr}" style="border-top:0.5px solid rgba(255,255,255,.2)">
       <div class="status-icon">${icon}</div>
       <div class="status-label">${capitalize(o.status)}</div>
@@ -1892,31 +1958,14 @@ function renderTicket(id){
     <div class="ticket-tl">${tlHtml}</div>
     ${qrHtml}
   </div>
-  <div class="refresh-note"><span class="spin-icon"><i class="ti ti-refresh" aria-hidden="true"></i></span> Live synchronized via Firebase</div>
-  <span class="new-order-lnk" onclick="startNewOrder()">← Order something else</span>`;
+  <button class="confirm-btn" style="background:var(--surface-2); color:var(--text-primary); border:1.5px solid var(--border-accent); margin-top:14px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="startNewOrder()">
+    <i class="ti ti-plus"></i> ສັ່ງເມນູເພີ່ມ (ແຍກບິນໃໝ່ / Order More)
+  </button>
+  <div class="refresh-note" style="margin-top:14px;"><span class="spin-icon"><i class="ti ti-refresh" aria-hidden="true"></i></span> Live synchronized via Firebase</div>
+  `;
 }
 
-/* ---- ADMIN TICKETS PROCESS ---- */
-function advance(id){
-  const o = orders.find(x=>x.id===id); if(!o) return;
-  const map = {waiting:'making',making:'ready',ready:'completed',paid:'completed'};
-  if(!map[o.status]) return;
-  const now = fmt(new Date());
-  const nextStatus = map[o.status];
-  const tl = JSON.parse(JSON.stringify(o.timeline));
-  
-  if(nextStatus==='making'){ tl[1].done=true; tl[1].time=now; tl[2].active=true; }
-  if(nextStatus==='ready'){  tl[2].done=true; tl[2].active=false; tl[2].time=now; tl[3].done=true; tl[3].time=now; }
-  
-  updateOrderStatusInDb(id, nextStatus, tl);
-}
-function viewCust(id){ myTicketId=id; goView('customer'); showTicketPage(id); }
-
-function getElapsed(o) {
-  if (!o.timestamp) return o.elapsed || 0;
-  return Math.floor((Date.now() - o.timestamp) / 60000);
-}
-
+/* ---- ADMIN TICKETS VIEW ---- */
 function renderAdmin(){
   const grid = document.getElementById('admin-grid');
   if(!grid) return;
@@ -1939,6 +1988,7 @@ function renderAdmin(){
           <div style="font-size:11px; font-weight:500; margin-top:2px;">
             <i class="ti ti-user" aria-hidden="true"></i> ${o.customerName || 'Customer'} (${o.customerPhone || ''})
           </div>
+          ${o.comment ? `<div style="font-size:11.5px; background:rgba(0,0,0,0.15); padding:3px 6px; border-radius:4px; display:inline-block; margin-top:4px; font-weight:500; border:0.5px solid rgba(255,255,255,0.2);">ໝາຍເຫດ: ${o.comment}</div>` : ''}
         </div>
         <i class="ti ti-coffee" style="font-size:18px;opacity:.75" aria-hidden="true"></i>
       </div>
@@ -1962,6 +2012,11 @@ function renderAdmin(){
         <div class="timer"><i class="ti ti-clock" style="font-size:12px" aria-hidden="true"></i><span style="${over?'color:#E24B4A':''}">${timerTxt(o)}</span></div>
         <div class="prog"><div class="prog-fill" style="width:${pct}%;background:${pCol}"></div></div>
         
+        <!-- DELAY ALERT TRIGGER BUTTON -->
+        <button class="abtn" onclick="sendDelayAlert('${o.id}')" style="background:#FFF3E0; border-color:#FF8F00; color:#E65100; margin-bottom:6px; font-weight:600;">
+          <i class="ti ti-alert-triangle"></i> ແຈ້ງອໍເດີ້ຊ້າ (Delay Alert)
+        </button>
+
         ${o.slipUrl ? `
           <button class="abtn" onclick="viewSlipModal('${o.id}')" style="background:#E8F5E9; border-color:#2E7D32; color:#2E7D32; margin-bottom:6px; font-weight:600;">
             <i class="ti ti-eye"></i> View Slip (ເບິ່ງໃບໂອນ)
@@ -2038,10 +2093,10 @@ function timerTxt(o){
   return elapsed>o.maxTime?`Delayed ${elapsed-o.maxTime}m`:`${elapsed}m / est. ${o.maxTime}m`;
 }
 
-// Initial Boot view
+// Initial view boot
 goView('customer');
 
-// Auto update timer displays every minute locally
+// Refresh clock loop
 setInterval(()=>{
   renderAdmin();
 },60000);
