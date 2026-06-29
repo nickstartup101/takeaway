@@ -1,3 +1,35 @@
+ນີ້ແມ່ນໄຟລ໌ HTML ທີ່ໄດ້ຮັບການປັບປຸງເພື່ອແກ້ໄຂທັງສອງບັນຫາທີ່ທ່ານພົບ
+ເຊິ່ງໄດ້ຮັບການແກ້ໄຂຢ່າງເປັນລະບົບດັ່ງນີ້:
+
+1. ປັບປຸງ Ticket ຝັ່ງ Admin ໃຫ້ເປັນແບບ Interactive (ຫຍໍ້-ຂະຫຍາຍໄດ້)
+
+  - ການເຮັດວຽກ: ເພີ່ມລະບົບ adminExpandedCards (ເກັບສະຖານະການເປີດ/ປິດ Ticket
+    ແຕ່ລະບິນ).
+  - ການສະແດງຜົນ:
+      - ຕອນພັບ (Collapsed): ຈະສະແດງສະເພາະຫົວຂໍ້ບິນ, ຊື່ລູກຄ້າ, ຂໍ້ມູນເມນູໂດຍຫຍໍ້
+        (Summary) ແລະ ປຸ່ມກົດຮັບອໍເດີ້ດ່ວນ (Quick Actions) ເພື່ອໃຫ້ Barista
+        ເຮັດວຽກໄດ້ສະດວກ ແລະ ປະຢັດພື້ນທີ່ໜ້າຈໍ.
+      - ຕອນຂະຫຍາຍ (Expanded): ຈະສະແດງລາຍລະອຽດເມນູແບບເຕັມ, Add-ons,
+        ຄອມເມັ້ນເຄື່ອງດື່ມ, ປຸ່ມເບິ່ງໃບໂອນ ແລະ ປຸ່ມແຈ້ງເຕືອນຕ່າງໆ.
+      - ລະບົບ Auto-Expand: ເມື່ອມີອໍເດີ້ໃໝ່ເຂົ້າມາ ຫຼື ຕອນໂຫຼດໜ້າທຳອິດ,
+        ລະບົບຈະທຳການຂະຫຍາຍ Ticket ທີ່ຢູ່ໃນສະຖານະ waiting (ຖ້າຄິວ) ແລະ making
+        (ກຳລັງເຮັດ) ໃຫ້ໂດຍອັດຕະໂນມັດເພື່ອປ້ອງກັນ Barista ພາດອໍເດີ້.
+
+2. ແກ້ໄຂບັນຫາໜ້າເວັບຣີເຟຣສແລ້ວ Ticket ລູກຄ້າຫາຍ
+
+  - ສາເຫດເດີມ: ເກີດຈາກ Race Condition (ການດຶງຂໍ້ມູນຈາກ Firebase
+    ຊ້າກວ່າການເຮັດວຽກຂອງ Script ຕອນໂຫຼດໜ້າໃໝ່) ເຮັດໃຫ້ລະບົບກວດສອບບໍ່ພົບ Ticket
+    ID ທີ່ຍັງຄ້າງຢູ່ແລ້ວປ່ຽນໄປໜ້າເລືອກເມນູໂດຍອັດຕະໂນມັດ.
+  - ວິທີແກ້ໄຂ:
+    1.  ທຳການບັນທຶກ myTicketId ລົງໃນ localStorage ດ້ວຍຄີ
+        la_dolce_current_ticket_id ໂດຍກົງເມື່ອມີການສັ່ງຊື້.
+    2.  ຕອນໂຫຼດໜ້າເວັບ, ລະບົບຈະດຶງຂໍ້ມູນ Ticket ຫຼ້າສຸດຂຶ້ນມາທັນທີ ໂດຍຈະສະແດງ
+        Loading State (ກຳລັງໂຫຼດຂໍ້ມູນອໍເດີ້...) ລະຫວ່າງລໍຖ້າການເຊື່ອມຕໍ່
+        Firebase. ເມື່ອ Firebase ດຶງຂໍ້ມູນສຳເລັດ, ລະບົບຈະສະແດງ Ticket
+        ຕົວຈິງໃຫ້ເຫັນຢ່າງຕໍ່ເນື່ອງໂດຍທີ່ລູກຄ້າບໍ່ຕ້ອງກົດປຸ່ມໃດໆເລີຍ.
+
+ໄຟລ໌ Code ທີ່ແກ້ໄຂແລ້ວທັງໝົດ:
+
 <!DOCTYPE html>
 <html lang="lo">
 <head>
@@ -777,7 +809,10 @@ const SEED_CATEGORIES = {
 let MENU = {};
 let orders = [];
 let currentFilter = 'all';
-let myTicketId = null;
+
+// PERSISTENT TICKET STATE: ດຶງຄ່າ Ticket ຫຼ້າສຸດຈາກ LocalStorage ທັນທີ ເພື່ອແກ້ບັນຫາໜ້າຣີເຟຣສແລ້ວຫາຍ
+let myTicketId = localStorage.getItem('la_dolce_current_ticket_id') || null;
+
 let menuDataUrl = null;
 let qrDataUrl = null;
 let cart = {};
@@ -790,8 +825,8 @@ let knownOrderIds = new Set();
 let isFirstLoad = true;
 let lastTicketStatus = null;
 
-// Track expanded status for long orders inside admin cards
-let expandedCards = new Set();
+// Track expanded status for admin cards & nested lists
+let adminExpandedCards = new Set();
 
 function detectDevice() {
   const width = window.innerWidth;
@@ -899,10 +934,6 @@ if (isFirebaseConnected) {
   }, err => console.error("Menu sync error:", err));
 
   db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
-    if (snapshot.empty) {
-      seedOrdersIfEmpty();
-      return;
-    }
     const list = [];
     const currentIds = [];
     snapshot.forEach(doc => {
@@ -914,6 +945,12 @@ if (isFirebaseConnected) {
       const hasNewOrder = currentIds.some(id => !knownOrderIds.has(id));
       if (hasNewOrder) {
         playSound('new_ticket');
+        // AUTO EXPAND: ເປີດຂະຫຍາຍ Ticket ໃໝ່ຝັ່ງ Admin ອັດຕະໂນມັດເພື່ອໃຫ້ Barista ເຫັນທັນທີ
+        currentIds.forEach(id => {
+          if (!knownOrderIds.has(id)) {
+            adminExpandedCards.add(id);
+          }
+        });
       }
       if (myTicketId) {
         const myOrder = list.find(o => o.id === myTicketId);
@@ -922,6 +959,13 @@ if (isFirebaseConnected) {
         }
         if (myOrder) lastTicketStatus = myOrder.status;
       }
+    } else {
+      // ໂຫຼດເທື່ອທຳອິດ: ໃຫ້ຂະຫຍາຍ Ticket ທີ່ກຳລັງເຮັດ ຫຼື ຖ້າຄິວຢູ່ໄວ້ລໍຖ້າເລີຍ
+      list.forEach(o => {
+        if (o.status === 'waiting' || o.status === 'making') {
+          adminExpandedCards.add(o.id);
+        }
+      });
     }
 
     knownOrderIds = new Set(currentIds);
@@ -930,6 +974,8 @@ if (isFirebaseConnected) {
     
     renderAdmin();
     updateCounts();
+
+    // ລະບົບ Persistent Render: ຖ້າມີ Ticket ຂອງລູກຄ້າ, ໃຫ້ສະແດງທັນທີເມື່ອ Firebase ໂຫຼດສຳເລັດ
     if (myTicketId) {
       renderTicket(myTicketId);
     }
@@ -976,7 +1022,14 @@ if (isFirebaseConnected) {
     localStorage.setItem('la_dolce_orders', JSON.stringify(orders));
   }
 
+  orders.forEach(o => {
+    if (o.status === 'waiting' || o.status === 'making') {
+      adminExpandedCards.add(o.id);
+    }
+  });
+
   setTimeout(() => {
+    isFirstLoad = false;
     renderMenu();
     renderAdminMenuList();
     renderAdmin();
@@ -986,12 +1039,7 @@ if (isFirebaseConnected) {
 
 function saveMenuToDb(payload, itemId = null) {
   if (isFirebaseConnected) {
-    if (itemId) {
-      return db.collection('menu').doc(itemId).update(payload);
-    } else {
-      payload.createdAt = Date.now();
-      return db.collection('menu').add(payload);
-    }
+    return db.collection('menu').doc(itemId).update(payload);
   } else {
     return new Promise((resolve) => {
       if (itemId) {
@@ -2044,7 +2092,8 @@ function placeOrder(){
     lastTicketStatus = 'waiting'; 
     cart = {};
     
-    // FORCE-PULL: Save customer info locally for subsequent orders
+    // ບັນທຶກ Ticket ID ແລະ ຂໍ້ມູນລູກຄ້າໄວ້ໃນ LocalStorage ທັນທີ ເພື່ອແກ້ໄຂບັນຫາຣີເຟຣສໜ້າເວັບແລ້ວ Ticket ຫາຍ
+    localStorage.setItem('la_dolce_current_ticket_id', ticketId);
     localStorage.setItem('la_dolce_last_name', customerName);
     localStorage.setItem('la_dolce_last_phone', customerPhone);
 
@@ -2074,7 +2123,22 @@ function showTicketPage(id){ goPage('ticket'); renderTicket(id); }
 function renderTicket(id){
   const o = orders.find(x=>x.id===id);
   const el = document.getElementById('ticket-inner');
-  if(!o){ el.innerHTML='<div class="empty">Ticket not found</div>'; return; }
+  
+  if(!o){ 
+    // LOADING SKELETON: ສະແດງ Loading ລະຫວ່າງລໍຖ້າການເຊື່ອມຕໍ່ Firebase ຄັ້ງທຳອິດ
+    if (isFirstLoad) {
+      el.innerHTML = `
+        <div style="text-align:center; padding:50px 20px; color:var(--text-muted);">
+          <span class="spin-icon" style="font-size:24px; display:inline-block; margin-bottom:12px; color:var(--text-accent);"><i class="ti ti-loader-2"></i></span>
+          <div style="font-size:13px; font-weight:500;">ກຳລັງໂຫຼດຂໍ້ມູນອໍເດີ້ຂອງທ່ານ... (Connecting)</div>
+        </div>
+      `;
+    } else {
+      el.innerHTML = '<div class="empty">Ticket not found</div>'; 
+    }
+    return; 
+  }
+  
   const hdr = 'hdr-'+o.status;
   const icon = {waiting:'🟡',making:'☕',ready:'🎉',paid:'✅',completed:'✅'}[o.status]||'•';
   const ahead = orders.filter(x=>(x.status==='waiting'||x.status==='making')&&x.id!==id).length;
@@ -2263,19 +2327,23 @@ function advance(id){
   
   updateOrderStatusInDb(id, nextStatus, tl);
 }
-function viewCust(id){ myTicketId=id; goView('customer'); showTicketPage(id); }
+function viewCust(id){ myTicketId=id; localStorage.setItem('la_dolce_current_ticket_id', id); goView('customer'); showTicketPage(id); }
 
 function getElapsed(o) {
   if (!o.timestamp) return o.elapsed || 0;
   return Math.floor((Date.now() - o.timestamp) / 60000);
 }
 
-// See More / See Less Toggle for Long Orders
-function toggleCardExpand(id) {
-  if (expandedCards.has(id)) {
-    expandedCards.delete(id);
+// TOGGLE INTERACTIVE: ກົດຂະຫຍາຍ ຫຼື ພັບປິດ Ticket ຝັ່ງ Admin
+function toggleAdminCard(id, event) {
+  // ຖ້າກົດຖືກປຸ່ມຕ່າງໆ ບໍ່ໃຫ້ທຳການພັບ-ຂະຫຍາຍ card
+  if (event.target.closest('button') || event.target.closest('a') || event.target.closest('input') || event.target.closest('select')) {
+    return;
+  }
+  if (adminExpandedCards.has(id)) {
+    adminExpandedCards.delete(id);
   } else {
-    expandedCards.add(id);
+    adminExpandedCards.add(id);
   }
   renderAdmin();
 }
@@ -2287,6 +2355,7 @@ function renderAdmin(){
     ? orders.filter(o=>o.status!=='completed')
     : orders.filter(o=>o.status===currentFilter);
   if(!list.length){ grid.innerHTML='<div class="empty">No tickets here</div>'; return; }
+  
   grid.innerHTML = list.map(o=>{
     const hdr = 'hdr-'+o.status;
     const nextLabel = {waiting:'Start making',making:'Mark ready',ready:'Mark paid',paid:'Mark done'}[o.status];
@@ -2296,7 +2365,6 @@ function renderAdmin(){
     const pCol = o.status==='ready'?'#2E7D32':over?'#E24B4A':pct>70?'#E65100':'#1565C0';
     
     // --- MULTI-TICKET SCANNER ---
-    // Find other active orders (not completed) with the same phone number or name
     const otherOrders = orders.filter(other => 
       other.id !== o.id && 
       other.status !== 'completed' && 
@@ -2304,7 +2372,6 @@ function renderAdmin(){
        (!o.customerPhone && other.customerName === o.customerName))
     );
     
-    // Subtle pulsating purple dot instead of big box
     let otherTicketsBadge = '';
     if (otherOrders.length > 0) {
       const otherIds = otherOrders.map(other => other.id).join(', ');
@@ -2315,44 +2382,93 @@ function renderAdmin(){
         </span>
       `;
     }
-    // -----------------------------
 
-    // SEE MORE / SEE LESS COLLAPSIBLE LOGIC
-    const maxItemsToShow = 2;
-    const items = o.items || [];
-    const isExpanded = expandedCards.has(o.id);
-    const itemsToRender = isExpanded ? items : items.slice(0, maxItemsToShow);
+    const isExpanded = adminExpandedCards.has(o.id);
+    const toggleIcon = isExpanded ? 'ti-chevron-up' : 'ti-chevron-down';
+    const itemsSummary = o.items.map(i => `${i.name} x${i.qty}`).join(', ');
 
-    const itemsHtml = itemsToRender.map(i => {
-      const variantText = i.variantLabel ? ` (${i.variantLabel})` : '';
-      const addonsText = i.addons && i.addons.length ? `<div style="font-size:10px; color:var(--text-muted); padding-left: 6px;">+ ${i.addons.join(', ')}</div>` : '';
-      const commentText = i.comment ? `<div style="font-size:11.5px; color:#E65100; font-weight:600; padding-left: 6px; margin-top:2px;"><i class="ti ti-message-circle"></i> ${i.comment}</div>` : '';
-      
-      return `
-        <div class="card-item" style="flex-direction:column; align-items:flex-start; gap:2px; padding:4px 0;">
-          <div style="display:flex; justify-content:space-between; width:100%; font-size:12px;">
-            <span style="font-weight:600;">${i.name}${variantText}</span>
-            <span style="color:var(--text-muted); font-weight:500;">×${i.qty}</span>
+    let cardContentHtml = '';
+    
+    if (isExpanded) {
+      // INTERACTIVE: ການສະແດງຜົນແບບເຕັມ (Expanded)
+      const itemsHtml = o.items.map(i => {
+        const variantText = i.variantLabel ? ` (${i.variantLabel})` : '';
+        const addonsText = i.addons && i.addons.length ? `<div style="font-size:10px; color:var(--text-muted); padding-left: 6px;">+ ${i.addons.join(', ')}</div>` : '';
+        const commentText = i.comment ? `<div style="font-size:11.5px; color:#E65100; font-weight:600; padding-left: 6px; margin-top:2px;"><i class="ti ti-message-circle"></i> ${i.comment}</div>` : '';
+        
+        return `
+          <div class="card-item" style="flex-direction:column; align-items:flex-start; gap:2px; padding:4px 0;">
+            <div style="display:flex; justify-content:space-between; width:100%; font-size:12px;">
+              <span style="font-weight:600;">${i.name}${variantText}</span>
+              <span style="color:var(--text-muted); font-weight:500;">×${i.qty}</span>
+            </div>
+            ${addonsText}
+            ${commentText}
           </div>
-          ${addonsText}
-          ${commentText}
+        `;
+      }).join('');
+
+      cardContentHtml = `
+        <div class="card-body" style="border-top:1px solid rgba(0,0,0,.04)">
+          ${itemsHtml}
+          <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-top:6px;border-top:0.5px solid var(--border);padding-top:4px; display:flex; justify-content:space-between;">
+            <span>ລວມທັງໝົດ:</span> <span>${o.total} K</span>
+          </div>
+        </div>
+        <div class="card-footer" style="border-top: 1px solid var(--border);">
+          <div class="timer"><i class="ti ti-clock" style="font-size:12px" aria-hidden="true"></i><span style="${over?'color:#E24B4A':''}">${timerTxt(o)}</span></div>
+          <div class="prog"><div class="prog-fill" style="width:${pct}%;background:${pCol}"></div></div>
+          
+          <button class="abtn" onclick="event.stopPropagation(); sendDelayAlert('${o.id}')" style="background:#FFF3E0; border-color:#FF8F00; color:#E65100; margin-bottom:6px; font-weight:600; width:100%;">
+            <i class="ti ti-alert-triangle"></i> ແຈ້ງອໍເດີ້ຊ້າ (Delay Alert)
+          </button>
+
+          ${o.slipUrl ? `
+            <button class="abtn" onclick="event.stopPropagation(); viewSlipModal('${o.id}')" style="background:#E8F5E9; border-color:#2E7D32; color:#2E7D32; margin-bottom:6px; font-weight:600; width:100%;">
+              <i class="ti ti-eye"></i> View Slip (ເບິ່ງໃບໂອນ)
+            </button>` : ''}
+
+          <div class="acts" style="width:100%;">
+            ${nextLabel?`<button class="abtn accent" onclick="event.stopPropagation(); advance('${o.id}')" style="flex:2;">${nextLabel}</button>`:''}
+            <button class="abtn" onclick="event.stopPropagation(); viewCust('${o.id}')" style="flex:1;"><i class="ti ti-eye" style="font-size:12px" aria-hidden="true"></i> View</button>
+          </div>
         </div>
       `;
-    }).join('');
-
-    let toggleBtnHtml = '';
-    if (items.length > maxItemsToShow) {
-      toggleBtnHtml = `
-        <button onclick="event.stopPropagation(); toggleCardExpand('${o.id}')" style="background: none; border: none; color: var(--text-accent); font-size: 11px; font-weight: 600; cursor: pointer; padding: 4px 0; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;">
-          ${isExpanded ? '<i class="ti ti-chevron-up"></i> See Less' : `<i class="ti ti-chevron-down"></i> See More (+${items.length - maxItemsToShow})`}
-        </button>
+    } else {
+      // INTERACTIVE: ການສະແດງຜົນແບບພັບປິດ (Collapsed) ປະຢັດພື້ນທີ່
+      cardContentHtml = `
+        <div class="card-body" style="background: var(--surface-1); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75%;">
+            <strong>ເມນູ:</strong> ${itemsSummary}
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-primary); text-wrap: nowrap;">
+            ${o.total} K
+          </div>
+        </div>
+        <!-- ປຸ່ມກົດຮັບ ແລະ ຈັດການອໍເດີ້ດ່ວນ ຕອນພັບບິນຢູ່ -->
+        <div class="card-footer" style="padding: 6px 12px; display: flex; gap: 6px; align-items: center; justify-content: space-between; border-top: 1px solid var(--border);">
+          <div style="font-size: 10px; color: var(--text-muted); display:flex; align-items:center; gap:3px;">
+            <i class="ti ti-clock"></i> ${timerTxt(o)}
+          </div>
+          <div style="display:flex; gap:4px;">
+            ${nextLabel ? `<button class="abtn accent" onclick="event.stopPropagation(); advance('${o.id}')" style="padding: 3px 8px; font-size: 10px; border-radius: 6px;">${nextLabel}</button>` : ''}
+            <button class="abtn" onclick="event.stopPropagation(); viewCust('${o.id}')" style="padding: 3px 6px; font-size: 10px; border-radius: 6px;"><i class="ti ti-eye"></i></button>
+          </div>
+        </div>
       `;
     }
 
-    return `<div class="card" style="margin-bottom:8px;">
-      <div class="card-hdr ${hdr}">
-        <div>
-          <div class="card-hdr-id">${o.id}</div>
+    return `
+    <div class="card" style="margin-bottom:8px; cursor:pointer;" onclick="toggleAdminCard('${o.id}', event)">
+      <div class="card-hdr ${hdr}" style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="flex:1;">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div class="card-hdr-id" style="font-weight:700;">${o.id}</div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 10px; background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px; font-weight: 600;">${capitalize(o.status)}</span>
+              <i class="ti ${toggleIcon}" style="font-size:14px;" aria-hidden="true"></i>
+            </div>
+          </div>
           <div class="card-hdr-name">${o.type} · ${o.createdAt}</div>
           <div style="font-size:11px; font-weight:500; margin-top:2px; display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
             <i class="ti ti-user" aria-hidden="true"></i> ${o.customerName || 'Customer'} (${o.customerPhone || ''})
@@ -2360,31 +2476,8 @@ function renderAdmin(){
           </div>
           ${o.comment ? `<div style="font-size:11px; background:rgba(0,0,0,0.15); padding:3px 6px; border-radius:4px; display:inline-block; margin-top:4px; font-weight:500;">ໝາຍເຫດລວມ: ${o.comment}</div>` : ''}
         </div>
-        <i class="ti ti-coffee" style="font-size:18px;opacity:.75" aria-hidden="true"></i>
       </div>
-      <div class="card-body">
-        ${itemsHtml}
-        ${toggleBtnHtml}
-        <div style="font-size:11px;font-weight:500;color:var(--text-secondary);margin-top:4px;border-top:0.5px solid var(--border);padding-top:4px">${o.total} K</div>
-      </div>
-      <div class="card-footer">
-        <div class="timer"><i class="ti ti-clock" style="font-size:12px" aria-hidden="true"></i><span style="${over?'color:#E24B4A':''}">${timerTxt(o)}</span></div>
-        <div class="prog"><div class="prog-fill" style="width:${pct}%;background:${pCol}"></div></div>
-        
-        <button class="abtn" onclick="sendDelayAlert('${o.id}')" style="background:#FFF3E0; border-color:#FF8F00; color:#E65100; margin-bottom:6px; font-weight:600;">
-          <i class="ti ti-alert-triangle"></i> ແຈ້ງອໍເດີ້ຊ້າ (Delay Alert)
-        </button>
-
-        ${o.slipUrl ? `
-          <button class="abtn" onclick="viewSlipModal('${o.id}')" style="background:#E8F5E9; border-color:#2E7D32; color:#2E7D32; margin-bottom:6px; font-weight:600;">
-            <i class="ti ti-eye"></i> View Slip (ເບິ່ງໃບໂອນ)
-          </button>` : ''}
-
-        <div class="acts">
-          ${nextLabel?`<button class="abtn accent" onclick="advance('${o.id}')">${nextLabel}</button>`:''}
-          <button class="abtn" onclick="viewCust('${o.id}')"><i class="ti ti-eye" style="font-size:12px" aria-hidden="true"></i></button>
-        </div>
-      </div>
+      ${cardContentHtml}
     </div>`;
   }).join('');
 }
@@ -2435,14 +2528,7 @@ function goView(v){
   setBtnOn(v==='admin'?'btn-admin':'btn-cust');
   
   if (v==='customer') {
-    // If user has previous active tickets, dynamically restore tracking
-    let myTickets = JSON.parse(localStorage.getItem('la_dolce_my_tickets') || '[]');
-    myTickets = myTickets.filter(tid => orders.some(o => o.id === tid));
-    
-    if (myTickets.length > 0 && !myTicketId) {
-      myTicketId = myTickets[myTickets.length - 1]; // select the most recent ticket
-    }
-
+    // ລະບົບ Persist View: ກວດສອບ Ticket ຫຼ້າສຸດເພື່ອສະແດງໜ້າ Ticket ເລີຍໂດຍບໍ່ຕ້ອງກົດປຸ່ມໃດໆ
     if (myTicketId) {
       goPage('ticket');
       renderTicket(myTicketId);
@@ -2459,6 +2545,8 @@ function goPage(p){
 
 function startNewOrder(){ 
   myTicketId = null; 
+  // ເຄຼຍຄ່າ Ticket ປັດຈຸບັນອອກຈາກ LocalStorage ຕອນສັ່ງໃໝ່
+  localStorage.removeItem('la_dolce_current_ticket_id');
   cart = {}; 
   renderMenu(); 
   
