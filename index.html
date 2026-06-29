@@ -1,3 +1,5 @@
+
+```html
 <!DOCTYPE html>
 <html lang="lo">
 <head>
@@ -763,7 +765,14 @@ function detectDevice() {
   document.body.setAttribute('data-device', deviceType);
 }
 window.addEventListener('resize', detectDevice);
-window.addEventListener('DOMContentLoaded', detectDevice);
+window.addEventListener('DOMContentLoaded', () => {
+  detectDevice();
+  // FORCE-PULL: Pre-fill last saved customer details on load
+  const savedName = localStorage.getItem('la_dolce_last_name') || '';
+  const savedPhone = localStorage.getItem('la_dolce_last_phone') || '';
+  if (savedName) document.getElementById('cust-name').value = savedName;
+  if (savedPhone) document.getElementById('cust-phone').value = savedPhone;
+});
 
 function playSound(type) {
   try {
@@ -1994,8 +2003,18 @@ function placeOrder(){
     myTicketId = ticketId;
     lastTicketStatus = 'waiting'; 
     cart = {};
-    document.getElementById('cust-name').value = '';
-    document.getElementById('cust-phone').value = '';
+    
+    // FORCE-PULL: Save customer info locally for subsequent orders
+    localStorage.setItem('la_dolce_last_name', customerName);
+    localStorage.setItem('la_dolce_last_phone', customerPhone);
+
+    // Save ticket to customer's personal list of active tickets
+    let myTickets = JSON.parse(localStorage.getItem('la_dolce_my_tickets') || '[]');
+    if (!myTickets.includes(ticketId)) {
+      myTickets.push(ticketId);
+      localStorage.setItem('la_dolce_my_tickets', JSON.stringify(myTickets));
+    }
+
     document.getElementById('cust-comment').value = '';
     document.getElementById('cust-drink-comment').value = '';
     
@@ -2116,7 +2135,49 @@ function renderTicket(id){
     }
   }
 
-  el.innerHTML = `
+  // MULTI-TICKET SWITCHER: Render tab navigation bar if customer has multiple tickets
+  let myTickets = JSON.parse(localStorage.getItem('la_dolce_my_tickets') || '[]');
+  myTickets = myTickets.filter(tid => orders.some(o => o.id === tid));
+
+  let switcherHtml = '';
+  if (myTickets.length > 1) {
+    switcherHtml = `
+      <div style="margin-bottom:14px; background:var(--surface-0); padding:10px 12px; border-radius:14px; border:1px solid var(--border); text-align: left;">
+        <div style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px; display:flex; align-items:center; gap:4px;">
+          <i class="ti ti-cards"></i> ບິນທັງໝົດຂອງທ່ານ (${myTickets.length} ບິນ)
+        </div>
+        <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch;">
+    `;
+    myTickets.forEach(tid => {
+      const ticketObj = orders.find(x => x.id === tid);
+      if (ticketObj) {
+        const isActive = (tid === id);
+        const statusColors = {
+          waiting: {bg:'#FFF3E0', text:'#E65100', icon:'🟡'},
+          making: {bg:'#E3F2FD', text:'#1565C0', icon:'☕'},
+          ready: {bg:'#E8F5E9', text:'#2E7D32', icon:'🎉'},
+          paid: {bg:'#F3E5F5', text:'#6A1B9A', icon:'✅'},
+          completed: {bg:'#F5F5F5', text:'#757575', icon:'✔️'}
+        };
+        const col = statusColors[ticketObj.status] || {bg:'#f1f1f5', text:'#5c5c60', icon:'•'};
+        
+        switcherHtml += `
+          <button onclick="event.preventDefault(); renderTicket('${tid}');" style="flex-shrink:0; display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:20px; border:1px solid ${isActive ? 'var(--border-accent)' : 'var(--border)'}; background:${isActive ? 'var(--bg-accent)' : '#fff'}; cursor:pointer; font-family:inherit; transition:all 0.15s;">
+            <span style="font-size:12px; font-weight:700; color:${isActive ? 'var(--text-accent)' : 'var(--text-primary)'};">${tid}</span>
+            <span style="font-size:10px; padding:2px 6px; border-radius:10px; background:${col.bg}; color:${col.text}; font-weight:600; display:flex; align-items:center; gap:2px;">
+              ${col.icon} ${capitalize(ticketObj.status)}
+            </span>
+          </button>
+        `;
+      }
+    });
+    switcherHtml += `
+        </div>
+      </div>
+    `;
+  }
+
+  el.innerHTML = switcherHtml + `
   <div class="ticket-card" style="text-align:center;">
     <div class="ticket-hdr ${hdr}">
       <div class="tid">${o.id}</div>
@@ -2280,16 +2341,44 @@ function goView(v){
   document.getElementById('admin-view').style.display = v==='admin'?'':'none';
   document.getElementById('customer-view').style.display = v==='customer'?'':'none';
   setBtnOn(v==='admin'?'btn-admin':'btn-cust');
-  if(v==='customer'&&!myTicketId) {
-    goPage('menu');
-    refreshMenuImageDisplay(); 
+  
+  if (v==='customer') {
+    // If user has previous active tickets, dynamically restore tracking
+    let myTickets = JSON.parse(localStorage.getItem('la_dolce_my_tickets') || '[]');
+    myTickets = myTickets.filter(tid => orders.some(o => o.id === tid));
+    
+    if (myTickets.length > 0 && !myTicketId) {
+      myTicketId = myTickets[myTickets.length - 1]; // select the most recent ticket
+    }
+
+    if (myTicketId) {
+      goPage('ticket');
+      renderTicket(myTicketId);
+    } else {
+      goPage('menu');
+      refreshMenuImageDisplay();
+    }
   }
 }
 function goPage(p){
   document.getElementById('page-menu').classList.toggle('active', p==='menu');
   document.getElementById('page-ticket').classList.toggle('active', p==='ticket');
 }
-function startNewOrder(){ myTicketId=null; cart={}; renderMenu(); goPage('menu'); }
+
+function startNewOrder(){ 
+  myTicketId = null; 
+  cart = {}; 
+  renderMenu(); 
+  
+  // FORCE-PULL: Pre-fill customer's name and phone for the new ticket
+  const savedName = localStorage.getItem('la_dolce_last_name') || '';
+  const savedPhone = localStorage.getItem('la_dolce_last_phone') || '';
+  if (savedName) document.getElementById('cust-name').value = savedName;
+  if (savedPhone) document.getElementById('cust-phone').value = savedPhone;
+  
+  goPage('menu'); 
+}
+
 function setBtnOn(id){ ['btn-admin','btn-cust'].forEach(b=>document.getElementById(b).classList.toggle('on',b===id)); }
 function show(id){ document.getElementById(id).style.display=''; }
 function hide(id){ document.getElementById(id).style.display='none'; }
