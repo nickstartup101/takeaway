@@ -34,7 +34,7 @@
   /* RESPONSIVE DESIGN FOR PHONES & TABLETS */
   body {
     font-family: var(--font-sans);
-    background: #0d0d11 !important; /* Elegant background wrapper on desktop viewports */
+    background: #0d0d11; 
     display: flex;
     justify-content: center;
     align-items: center;
@@ -46,9 +46,9 @@
   .app {
     background: var(--surface-0);
     width: 100%;
-    max-width: 680px; /* Expands beautifully to tablet widths */
+    max-width: 680px; 
     height: 100vh;
-    max-height: 940px; /* Flexible aspect height */
+    max-height: 940px; 
     border-radius: 20px;
     border: 1px solid var(--border);
     box-shadow: 0 12px 40px rgba(0,0,0,0.3);
@@ -177,7 +177,7 @@
   .page.active{display:block}
   .menu-hero{background:var(--surface-1);text-align:center}
   
-  /* CRITICAL: HIGH-DEFINITION MENU IMAGE DISPLAY STYLING */
+  /* HIGH-DEFINITION MENU IMAGE DISPLAY STYLING */
   #menu-display {
     width: 100%;
     display: block;
@@ -209,7 +209,7 @@
   /* CUSTOMIZATION DRAWER BOUND TO SHELL */
   .modal-overlay {
     display: none;
-    position: absolute; /* Strictly bound inside mobile frame boundary */
+    position: absolute; 
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0, 0, 0, 0.4);
     z-index: 1000;
@@ -264,23 +264,37 @@
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
   .pulse{animation:pulse 1.5s infinite}
   
-  /* ADAPT TO REAL MOBILE VIEWPING (FULL VIEWPORT ON MOBILE SCREEN) */
-  @media (max-width: 480px) {
+  /* DEVICE OPTIMIZATIONS (TABLET & PHONE SYSTEM) */
+  @media (max-width: 1024px) {
     body {
       background: var(--surface-0) !important;
       display: block;
       padding: 0;
-      min-height: auto;
+      min-height: 100vh;
     }
     .app {
       max-width: 100%;
       height: 100vh;
-      max-height: 100%;
+      max-height: 100vh;
       border-radius: 0;
       border: none;
       box-shadow: none;
-      position: relative;
     }
+  }
+
+  /* Tablet dynamic layout */
+  body[data-device="tablet"] .menu-hero #menu-display {
+    max-height: 480px;
+  }
+  body[data-device="tablet"] .grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  body[data-device="tablet"] .card-body {
+    padding: 12px 16px;
+  }
+  body[data-device="phone"] .menu-hero #menu-display {
+    max-height: 360px;
   }
   </style>
 </head>
@@ -300,8 +314,8 @@
       <i class="ti ti-bell" aria-hidden="true"></i> New order!
     </span>
     <div class="view-toggle">
-      <button class="vbtn on" id="btn-admin" onclick="tryGoAdmin()"><i class="ti ti-layout-dashboard" aria-hidden="true"></i> Admin</button>
-      <button class="vbtn" id="btn-cust" onclick="goView('customer')"><i class="ti ti-user" aria-hidden="true"></i> Customer</button>
+      <button class="vbtn" id="btn-admin" onclick="tryGoAdmin()"><i class="ti ti-layout-dashboard" aria-hidden="true"></i> Admin</button>
+      <button class="vbtn on" id="btn-cust" onclick="goView('customer')"><i class="ti ti-user" aria-hidden="true"></i> Customer</button>
     </div>
   </div>
 </div>
@@ -351,9 +365,8 @@
     </button>
   </div>
 
-  <!-- COLLAPSIBLE SETTINGS MODULE (HIDDEN BY DEFAULT) -->
+  <!-- COLLAPSIBLE SETTINGS MODULE -->
   <div id="admin-settings-panel" style="display:none; overflow-y:auto; max-height:380px; border-bottom:1px solid var(--border);">
-    <!-- Settings: menu upload + QR upload -->
     <div class="settings-section">
       <h3><span><i class="ti ti-settings" aria-hidden="true"></i> Admin settings</span></h3>
 
@@ -367,7 +380,6 @@
           <span class="upload-note" id="menu-note">No image yet</span>
         </div>
         
-        <!-- Visual progress line for Menu upload -->
         <div id="menu-upload-progress" style="display:none; width:100%; margin-top:4px;">
           <div style="font-size:10px; color:var(--text-muted); margin-bottom:2px; display:flex; justify-content:space-between; width:100%; max-width:320px;">
             <span>Uploading Menu...</span>
@@ -389,7 +401,6 @@
           <span class="upload-note" id="qr-note">No QR yet</span>
         </div>
 
-        <!-- Visual progress line for QR upload -->
         <div id="qr-upload-progress" style="display:none; width:100%; margin-top:4px;">
           <div style="font-size:10px; color:var(--text-muted); margin-bottom:2px; display:flex; justify-content:space-between; width:100%; max-width:320px;">
             <span>Uploading QR...</span>
@@ -434,9 +445,7 @@
         </div>
       </div>
       
-      <div id="admin-menu-list" style="max-height:160px; overflow-y:auto; background:var(--surface-2); border-radius:8px; border:0.5px solid var(--border); padding:6px; display:flex; flex-direction:column; gap:4px">
-        <!-- Generated dynamically -->
-      </div>
+      <div id="admin-menu-list" style="max-height:160px; overflow-y:auto; background:var(--surface-2); border-radius:8px; border:0.5px solid var(--border); padding:6px; display:flex; flex-direction:column; gap:4px"></div>
 
       <div class="settings-row" style="margin-top:12px">
         <button class="lock-btn" onclick="lockAdmin()">
@@ -446,7 +455,7 @@
     </div>
   </div>
 
-  <!-- CONTROL TICKETS SECTION (PRIMARY VIEWPORT) -->
+  <!-- CONTROL TICKETS SECTION -->
   <div class="stats">
     <div class="stat"><div class="stat-n" style="color:var(--text-primary)" id="cn-all">0</div><div class="stat-l">Active</div></div>
     <div class="stat"><div class="stat-n" style="color:#E65100" id="cn-w">0</div><div class="stat-l">Waiting</div></div>
@@ -459,17 +468,16 @@
     <span class="chip chip-all on" id="chip-all" onclick="setF('all')">All</span>
     <span class="chip chip-w" id="chip-waiting" onclick="setF('waiting')">Waiting</span>
     <span class="chip chip-m" id="chip-making" onclick="setF('making')">Making</span>
-    <span class="chip chip-r" id="chip-ready" onclick="setF('ready')">Ready</span>
+    <span class="chip chip-ready" id="chip-ready" onclick="setF('ready')">Ready</span>
     <span class="chip chip-a" id="chip-paid" onclick="setF('paid')">Paid</span>
     <span class="chip chip-d" id="chip-completed" onclick="setF('completed')">Done</span>
   </div>
 
-  <!-- MAIN SCROLLABLE TICKETS LIST -->
   <div class="grid" id="admin-grid" style="flex:1; overflow-y:auto;"></div>
 </div>
 
 <!-- ===== CUSTOMER VIEW ===== -->
-<div id="customer-view" style="display:none">
+<div id="customer-view"> <!-- DEFAULT DISPLAY: Visible to prevent blank screens -->
   <div class="page active" id="page-menu" style="height:100%; display:flex; flex-direction:column;">
     <div class="menu-hero" style="flex-shrink: 0;">
       <img id="menu-display" alt="La Dolce menu" style="display:none">
@@ -482,16 +490,13 @@
     <div class="order-panel" style="flex:1; overflow-y:auto;">
       <h3>Place your order</h3>
       
-      <!-- Input for Customer details -->
       <div class="cust-input-group">
         <input type="text" id="cust-name" placeholder="ຊື່ຂອງທ່ານ / Name" class="cust-input" oninput="validateOrder()">
         <input type="tel" id="cust-phone" placeholder="ເບີຕິດຕໍ່ / Contact Number" class="cust-input" oninput="validateOrder()">
       </div>
 
       <!-- Categories Navigation Slider -->
-      <div id="category-tabs" style="display:flex; gap:6px; overflow-x:auto; padding:6px 0; margin-bottom:12px; -webkit-overflow-scrolling:touch; scrollbar-width: none;">
-        <!-- Categories populated dynamically -->
-      </div>
+      <div id="category-tabs" style="display:flex; gap:6px; overflow-x:auto; padding:6px 0; margin-bottom:12px; -webkit-overflow-scrolling:touch; scrollbar-width: none;"></div>
 
       <div class="menu-items" id="menu-items-list"></div>
       
@@ -519,13 +524,11 @@
       <button class="icon-btn" onclick="closeCustomizeModal()" style="font-size:18px;"><i class="ti ti-x"></i></button>
     </div>
     
-    <!-- Price Variant Option -->
     <div style="margin-bottom:14px;">
       <div style="font-size:11px; font-weight:500; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Select Variant / ເລືອກປະເພດ</div>
       <div id="variant-options" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
     </div>
 
-    <!-- Add-ons Option -->
     <div style="margin-bottom:16px;">
       <div style="font-size:11px; font-weight:500; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Add-ons / ເພີ່ມເຕີມ</div>
       <div id="addon-options" style="display:flex; flex-direction:column; gap:6px; max-height: 180px; overflow-y: auto;"></div>
@@ -556,9 +559,7 @@
       <h4 style="font-size:15px; font-weight:600; color:var(--text-primary)"><i class="ti ti-report-analytics"></i> Daily Report (ສະຫຼຸບທ້າຍມື້)</h4>
       <button class="icon-btn" onclick="closeDailyReport()"><i class="ti ti-x"></i></button>
     </div>
-    <div id="report-content" style="font-size:13px; color:var(--text-secondary); display:flex; flex-direction:column; gap:10px;">
-      <!-- Populated dynamically -->
-    </div>
+    <div id="report-content" style="font-size:13px; color:var(--text-secondary); display:flex; flex-direction:column; gap:10px;"></div>
     <button class="confirm-btn" onclick="closeDailyReport()" style="margin-top:16px; background:#FF8F00;">Close (ປິດ)</button>
   </div>
 </div>
@@ -577,9 +578,22 @@ const firebaseConfig = {
   measurementId: "G-VL8CHGGPPW"
 };
 
-// Initialize Firebase compat
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+// EXCEPTION-SAFE FIREBASE HYBRID CONNECTION
+let db = null;
+let isFirebaseConnected = false;
+
+try {
+  if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    isFirebaseConnected = true;
+    console.log("Firebase initialized successfully.");
+  } else {
+    console.warn("Firebase SDK not loaded. App is running in Local Storage offline mode.");
+  }
+} catch (e) {
+  console.error("Firebase init failed, switching to Local Storage fallback:", e);
+}
 
 const CORRECT_PIN = '7788';
 
@@ -595,47 +609,47 @@ const DEF_LABELS = ["Hot", "Iced", "Blended"];
 
 const SEED_CATEGORIES = {
   "Coffee":[
-    {name:"Latte",lao:"ລາເຕ້",prices:[34,36,52]},
-    {name:"Cappucino",lao:"ຄາປູຊິໂນ້",prices:[34,36,52]},
-    {name:"Espresso",lao:"ເອສເພຣສໂຊ",prices:[34,36,52]},
-    {name:"Mocca",lao:"ມ໊ອກກາ",prices:[34,38,52]},
-    {name:"Caramel Machiato",lao:"ຄາຣາເມວ ມາກຽໂຕ",prices:[35,39]},
-    {name:"Americano",lao:"ອາເມຣິກາໂນ",prices:[32,36]},
-    {name:"Americano Honey",lao:"ອາເມຣິກາໂນນ້ຳເຜິ້ງ",prices:[40]},
-    {name:"Americano Honey Lemon",lao:"ອາເມຣິກາໂນນ້ຳເຜິ້ງເລໝອນ",prices:[45]},
-    {name:"Coconut Coffee",lao:"ໂຄໂຄດຄ໋ອຟຟີ",prices:[48]},
+    {id:"c1", name:"Latte",lao:"ລາເຕ້",prices:[34,36,52], category:"Coffee"},
+    {id:"c2", name:"Cappucino",lao:"ຄາປູຊິໂນ້",prices:[34,36,52], category:"Coffee"},
+    {id:"c3", name:"Espresso",lao:"ເອສເພຣສໂຊ",prices:[34,36,52], category:"Coffee"},
+    {id:"c4", name:"Mocca",lao:"ມ໊ອກກາ",prices:[34,38,52], category:"Coffee"},
+    {id:"c5", name:"Caramel Machiato",lao:"ຄາຣາເມວ ມາກຽໂຕ",prices:[35,39], category:"Coffee"},
+    {id:"c6", name:"Americano",lao:"ອາເມຣິກาໂນ",prices:[32,36], category:"Coffee"},
+    {id:"c7", name:"Americano Honey",lao:"ອາເມຣິກາໂນນ້ຳເຜິ້ງ",prices:[40], category:"Coffee"},
+    {id:"c8", name:"Americano Honey Lemon",lao:"ອາເມຣິກາໂນນ້ຳເຜິ້ງເລໝອນ",prices:[45], category:"Coffee"},
+    {id:"c9", name:"Coconut Coffee",lao:"ໂຄໂຄດຄ໋ອຟຟີ",prices:[48], category:"Coffee"},
   ],
   "Signature Coffee":[
-    {name:"Creamy Coffee",lao:"ຄຣີມີ້ຄ໋ອຟຟີ",prices:[59],badge:"SIG"},
-    {name:"La Dolce Coffee",lao:"ລາໂດລເຊຄ໋ອຟຟີ",prices:[64],badge:"SIG"},
-    {name:"Coffee Cloud",lao:"ຄ໋ອຟຟີຄລາວ",prices:[62],badge:"SIG"},
+    {id:"sc1", name:"Creamy Coffee",lao:"ຄຣີມີ້ຄ໋ອຟຟີ",prices:[59],badge:"SIG", category:"Signature Coffee"},
+    {id:"sc2", name:"La Dolce Coffee",lao:"ລາໂດລເຊຄ໋ອຟຟີ",prices:[64],badge:"SIG", category:"Signature Coffee"},
+    {id:"sc3", name:"Coffee Cloud",lao:"ຄ໋ອຟຟີຄລາວ",prices:[62],badge:"SIG", category:"Signature Coffee"},
   ],
   "Matcha":[
-    {name:"Pour Matcha",lao:"ພຽວມັດຊະ",prices:[35]},
-    {name:"Matcha Latte",lao:"ມັດຊະລາເຕ້",prices:[49]},
-    {name:"Coconut Matcha",lao:"ໂຄໂຄດມັດຊະ",prices:[45]},
-    {name:"Matcha Cloud",lao:"ມັດຊະຄລາວ",prices:[62]},
-    {name:"Matcha Creamy Frappe",lao:"ມັດຊະຄຣີມີ້ເຟຣັບເປ້",prices:[75,85],badge:"NEW",sizeLabels:["Normal Milk","Oat Milk"]},
-    {name:"Cloud No.3",lao:"ຄລາວ ເລກ 3",prices:[65],badge:"SIG"},
+    {id:"m1", name:"Pour Matcha",lao:"ພຽວມັດຊະ",prices:[35], category:"Matcha"},
+    {id:"m2", name:"Matcha Latte",lao:"ມັດຊະລາເຕ້",prices:[49], category:"Matcha"},
+    {id:"m3", name:"Coconut Matcha",lao:"ໂຄໂຄດມັດຊະ",prices:[45], category:"Matcha"},
+    {id:"m4", name:"Matcha Cloud",lao:"ມັດຊະຄລາວ",prices:[62], category:"Matcha"},
+    {id:"m5", name:"Matcha Creamy Frappe",lao:"ມັດຊະຄຣີມີ້ເຟຣັບເປ້",prices:[75,85],badge:"NEW",sizeLabels:["Normal Milk","Oat Milk"], category:"Matcha"},
+    {id:"m6", name:"Cloud No.3",lao:"ຄລາວ ເລກ 3",prices:[65],badge:"SIG", category:"Matcha"},
   ],
   "Non-Coffee":[
-    {name:"Cocoa",lao:"ໂກໂກ້",prices:[34,36,52]},
-    {name:"Double Choc",lao:"ດັບເບິ້ລໂກຊ໊ອກ",prices:[67]},
+    {id:"nc1", name:"Cocoa",lao:"ໂກໂກ້",prices:[34,36,52], category:"Non-Coffee"},
+    {id:"nc2", name:"Double Choc",lao:"ດັບເບິ້ລໂກຊ໊ອກ",prices:[67], category:"Non-Coffee"},
   ],
   "Tea & Lemon":[
-    {name:"Green Tea Honey Lemon",lao:"ກຣີນທີ ນ້ຳເຜິ້ງເລໝອນ",prices:[36]},
-    {name:"Thai Tea Cream Cheese",lao:"ຊາໄທ ຄຣີມຊີສ",prices:[56]},
-    {name:"Thai Tea Lemon",lao:"ຊາໄທ ເລໝອນ",prices:[36]},
-    {name:"Green Tea Latte",lao:"ຊາຂຽວລາເຕ້",prices:[36,52],sizeLabels:["Iced","Blended"]},
+    {id:"tl1", name:"Green Tea Honey Lemon",lao:"ກຣີນທີ ນ້ຳເຜິ້ງເລໝອນ",prices:[36], category:"Tea & Lemon"},
+    {id:"tl2", name:"Thai Tea Cream Cheese",lao:"ຊາໄທ ຄຣີມຊີສ",prices:[56], category:"Tea & Lemon"},
+    {id:"tl3", name:"Thai Tea Lemon",lao:"ຊາໄທ ເລໝອນ",prices:[36], category:"Tea & Lemon"},
+    {id:"tl4", name:"Green Tea Latte",lao:"ຊາຂຽວລາເຕ້",prices:[36,52],sizeLabels:["Iced","Blended"], category:"Tea & Lemon"},
   ],
   "Fresh Drinks":[
-    {name:"Fresh Pop Soda",lao:"ເຟຣສປ໊ອບໂຊດາ",prices:[34]},
-    {name:"Green Tea Mint Soda",lao:"ກຣີນທີ ມິນໂຊດາ",prices:[34]},
-    {name:"Ocean Lychee",lao:"ໂອຊຽນລິນຈີ",prices:[34]},
-    {name:"Plum Sprite",lao:"ບ໊ວຍສະໄປ໋",prices:[34]},
-    {name:"Rainbow Lychee",lao:"ເຣນໂບລິນຈີ",prices:[36]},
-    {name:"Red Honey Lemon",lao:"ເຣດ ນ້ຳເຜິ້ງເລໝອນ",prices:[36]},
-    {name:"Plum Honey Lemon",lao:"ບ໊ວຍ ນ້ຳເຜິ້ງເລໝອນ",prices:[34]},
+    {id:"fd1", name:"Fresh Pop Soda",lao:"ເຟຣສປ໊ອບໂຊດາ",prices:[34], category:"Fresh Drinks"},
+    {id:"fd2", name:"Green Tea Mint Soda",lao:"ກຣີນທີ ມິນໂຊດາ",prices:[34], category:"Fresh Drinks"},
+    {id:"fd3", name:"Ocean Lychee",lao:"ໂອຊຽນລິນຈີ",prices:[34], category:"Fresh Drinks"},
+    {id:"fd4", name:"Plum Sprite",lao:"ບ໊ວຍສະໄປ໋",prices:[34], category:"Fresh Drinks"},
+    {id:"fd5", name:"Rainbow Lychee",lao:"ເຣນໂບລິນຈີ",prices:[36], category:"Fresh Drinks"},
+    {id:"fd6", name:"Red Honey Lemon",lao:"ເຣດ ນ້ຳເຜິ້ງເລໝອນ",prices:[36], category:"Fresh Drinks"},
+    {id:"fd7", name:"Plum Honey Lemon",lao:"ບ໊ວຍ ນ້ຳເຜິ້ງເລໝອນ",prices:[34], category:"Fresh Drinks"},
   ],
 };
 
@@ -651,24 +665,46 @@ let adminUnlocked = false;
 let editMenuId = null;
 let selectedCategory = 'Coffee';
 
-// Audio alerts system (Web Audio Synth - No assets needed!)
 let knownOrderIds = new Set();
 let isFirstLoad = true;
 let lastTicketStatus = null;
+
+// Dynamic Screen/Device detector
+function detectDevice() {
+  const width = window.innerWidth;
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  
+  let deviceType = "desktop";
+  if (/android|ipad|playbook|silk/i.test(userAgent)) {
+    deviceType = "tablet";
+  } else if (/iphone|ipod/i.test(userAgent)) {
+    deviceType = "phone";
+  }
+  
+  if (width <= 480) {
+    deviceType = "phone";
+  } else if (width > 480 && width <= 1024) {
+    deviceType = "tablet";
+  }
+  
+  document.body.setAttribute('data-device', deviceType);
+}
+window.addEventListener('resize', detectDevice);
+window.addEventListener('DOMContentLoaded', detectDevice);
 
 function playSound(type) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     if (type === 'new_ticket') {
-      playTone(ctx, 523.25, 0.1, 0); // Double chime
+      playTone(ctx, 523.25, 0.1, 0); 
       playTone(ctx, 659.25, 0.15, 0.12);
     } else if (type === 'status_update') {
-      playTone(ctx, 440.00, 0.08, 0); // Friendly alert
+      playTone(ctx, 440.00, 0.08, 0); 
       playTone(ctx, 554.37, 0.08, 0.08);
       playTone(ctx, 659.25, 0.15, 0.16);
     }
   } catch(e) {
-    console.error("Synthesizer audio blocked or failed:", e);
+    console.error("Audio block:", e);
   }
 }
 
@@ -684,97 +720,224 @@ function playTone(ctx, freq, duration, delay) {
   osc.stop(ctx.currentTime + delay + duration);
 }
 
-// Temporarily stores variant / addon choices when customizing
 let tempSelection = {
   itemId: null,
   variantIndex: 0,
   addons: {} 
 };
 
-/* ---- CORE DATABASE SYNC ---- */
-// Listen for global settings (Menu & QR Image)
-db.collection('settings').doc('config').onSnapshot(doc => {
-  if (doc.exists) {
-    const data = doc.data();
-    if (data.menuDataUrl) {
-      menuDataUrl = data.menuDataUrl;
-      const t = document.getElementById('menu-thumb');
-      if (t) { t.src = menuDataUrl; t.style.display = 'block'; }
-      const d = document.getElementById('menu-display');
-      if (d) { d.src = menuDataUrl; d.style.display = 'block'; }
-      const placeholder = document.getElementById('menu-placeholder');
-      if (placeholder) placeholder.style.display = 'none';
-    }
-    if (data.qrDataUrl) {
-      qrDataUrl = data.qrDataUrl;
-      const q = document.getElementById('qr-thumb');
-      if (q) { q.src = qrDataUrl; q.style.display = 'block'; }
-      const qrNote = document.getElementById('qr-note');
-      if (qrNote) qrNote.textContent = 'QR image uploaded and ready';
-    }
-  }
-});
-
-// Listen for Menu items
-db.collection('menu').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
-  if (snapshot.empty) {
-    seedMenuIfEmpty();
-    return;
-  }
-  const grouped = {};
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    const cat = data.category || 'Coffee';
-    if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push({ id: doc.id, ...data });
-  });
-  MENU = grouped;
-  renderMenu();
-  renderAdminMenuList();
-});
-
-// Listen for Orders with Audio Alerts
-db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
-  if (snapshot.empty) {
-    seedOrdersIfEmpty();
-    return;
-  }
-  const list = [];
-  const currentIds = [];
-  snapshot.forEach(doc => {
-    list.push({ id: doc.id, ...doc.data() });
-    currentIds.push(doc.id);
-  });
-
-  // Check for newly received orders (Only on subsequent updates)
-  if (!isFirstLoad) {
-    const hasNewOrder = currentIds.some(id => !knownOrderIds.has(id));
-    if (hasNewOrder) {
-      playSound('new_ticket');
-    }
-    
-    // Check if customer's own active ticket changed status
-    if (myTicketId) {
-      const myOrder = list.find(o => o.id === myTicketId);
-      if (myOrder && lastTicketStatus && lastTicketStatus !== myOrder.status) {
-        playSound('status_update');
+/* ---- DATABASE CONNECTIONS WRAPPER ---- */
+if (isFirebaseConnected) {
+  db.collection('settings').doc('config').onSnapshot(doc => {
+    if (doc.exists) {
+      const data = doc.data();
+      if (data.menuDataUrl) {
+        menuDataUrl = data.menuDataUrl;
+        const t = document.getElementById('menu-thumb');
+        if (t) { t.src = menuDataUrl; t.style.display = 'block'; }
+        const d = document.getElementById('menu-display');
+        if (d) { d.src = menuDataUrl; d.style.display = 'block'; }
+        const placeholder = document.getElementById('menu-placeholder');
+        if (placeholder) placeholder.style.display = 'none';
       }
-      if (myOrder) lastTicketStatus = myOrder.status;
+      if (data.qrDataUrl) {
+        qrDataUrl = data.qrDataUrl;
+        const q = document.getElementById('qr-thumb');
+        if (q) { q.src = qrDataUrl; q.style.display = 'block'; }
+        const qrNote = document.getElementById('qr-note');
+        if (qrNote) qrNote.textContent = 'QR image uploaded and ready';
+      }
+    }
+  }, err => console.error("Config listener error: ", err));
+
+  db.collection('menu').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
+    if (snapshot.empty) {
+      seedMenuIfEmpty();
+      return;
+    }
+    const grouped = {};
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const cat = data.category || 'Coffee';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push({ id: doc.id, ...data });
+    });
+    MENU = grouped;
+    renderMenu();
+    renderAdminMenuList();
+  }, err => console.error("Menu listener error: ", err));
+
+  db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+    if (snapshot.empty) {
+      seedOrdersIfEmpty();
+      return;
+    }
+    const list = [];
+    const currentIds = [];
+    snapshot.forEach(doc => {
+      list.push({ id: doc.id, ...doc.data() });
+      currentIds.push(doc.id);
+    });
+
+    if (!isFirstLoad) {
+      const hasNewOrder = currentIds.some(id => !knownOrderIds.has(id));
+      if (hasNewOrder) {
+        playSound('new_ticket');
+      }
+      if (myTicketId) {
+        const myOrder = list.find(o => o.id === myTicketId);
+        if (myOrder && lastTicketStatus && lastTicketStatus !== myOrder.status) {
+          playSound('status_update');
+        }
+        if (myOrder) lastTicketStatus = myOrder.status;
+      }
+    }
+
+    knownOrderIds = new Set(currentIds);
+    isFirstLoad = false;
+    orders = list;
+    
+    renderAdmin();
+    updateCounts();
+    if (myTicketId) {
+      renderTicket(myTicketId);
+    }
+  }, err => console.error("Orders listener error: ", err));
+} else {
+  // OFFLINE MODE: Load configuration from LocalStorage
+  console.log("Fallback offline mode actively running...");
+  menuDataUrl = localStorage.getItem('la_dolce_menu_image');
+  if (menuDataUrl) {
+    const t = document.getElementById('menu-thumb');
+    if (t) { t.src = menuDataUrl; t.style.display = 'block'; }
+    const d = document.getElementById('menu-display');
+    if (d) { d.src = menuDataUrl; d.style.display = 'block'; }
+    const placeholder = document.getElementById('menu-placeholder');
+    if (placeholder) placeholder.style.display = 'none';
+  }
+  
+  qrDataUrl = localStorage.getItem('la_dolce_qr_image');
+  if (qrDataUrl) {
+    const q = document.getElementById('qr-thumb');
+    if (q) { q.src = qrDataUrl; q.style.display = 'block'; }
+    const qrNote = document.getElementById('qr-note');
+    if (qrNote) qrNote.textContent = 'QR image uploaded and ready';
+  }
+
+  const localMenu = localStorage.getItem('la_dolce_menu');
+  if (localMenu) {
+    MENU = JSON.parse(localMenu);
+  } else {
+    MENU = SEED_CATEGORIES;
+    localStorage.setItem('la_dolce_menu', JSON.stringify(MENU));
+  }
+
+  const localOrders = localStorage.getItem('la_dolce_orders');
+  if (localOrders) {
+    orders = JSON.parse(localOrders);
+  } else {
+    orders = [
+      {id:'#1001', status:'making', type:'Take Away', customerName:'ສົມສັກ (Somsack)', customerPhone:'020 5555 1234', items:[{name:'Creamy Coffee (SIG)',variantLabel:'Standard',qty:1,price:59,addons:[]}], total:59, createdAt:'09:00', timestamp:Date.now()-480000, timeline:[{label:'Order placed',time:'09:00',done:true},{label:'Barista accepted',time:'09:01',done:true},{label:'Making drink',time:null,done:false,active:true},{label:'Ready for pickup',time:null,done:false}]},
+      {id:'#1002', status:'waiting', type:'Take Away', customerName:'ແກ້ວ (Keo)', customerPhone:'020 7777 5678', items:[{name:'Latte',variantLabel:'Iced',qty:1,price:36,addons:['Oat milk']}], total:36, createdAt:'09:05', timestamp:Date.now()-180000, timeline:[{label:'Order placed',time:'09:05',done:true},{label:'Barista accepted',time:null,done:false},{label:'Making drink',time:null,done:false,active:false},{label:'Ready for pickup',time:null,done:false}]}
+    ];
+    localStorage.setItem('la_dolce_orders', JSON.stringify(orders));
+  }
+
+  setTimeout(() => {
+    renderMenu();
+    renderAdminMenuList();
+    renderAdmin();
+    updateCounts();
+  }, 100);
+}
+
+function saveMenuToDb(payload, itemId = null) {
+  if (isFirebaseConnected) {
+    if (itemId) {
+      return db.collection('menu').doc(itemId).update(payload);
+    } else {
+      payload.createdAt = Date.now();
+      return db.collection('menu').add(payload);
+    }
+  } else {
+    return new Promise((resolve) => {
+      if (itemId) {
+        for (let cat in MENU) {
+          const idx = MENU[cat].findIndex(x => x.id === itemId);
+          if (idx !== -1) {
+            MENU[cat][idx] = { ...MENU[cat][idx], ...payload };
+            break;
+          }
+        }
+      } else {
+        const cat = payload.category;
+        if (!MENU[cat]) MENU[cat] = [];
+        const newItem = { id: 'local_' + Date.now(), ...payload, createdAt: Date.now() };
+        MENU[cat].push(newItem);
+      }
+      localStorage.setItem('la_dolce_menu', JSON.stringify(MENU));
+      renderMenu();
+      renderAdminMenuList();
+      resolve();
+    });
+  }
+}
+
+function deleteMenuFromDb(itemId) {
+  if (isFirebaseConnected) {
+    return db.collection('menu').doc(itemId).delete();
+  } else {
+    return new Promise((resolve) => {
+      for (let cat in MENU) {
+        const idx = MENU[cat].findIndex(x => x.id === itemId);
+        if (idx !== -1) {
+          MENU[cat].splice(idx, 1);
+          break;
+        }
+      }
+      localStorage.setItem('la_dolce_menu', JSON.stringify(MENU));
+      renderMenu();
+      renderAdminMenuList();
+      resolve();
+    });
+  }
+}
+
+function updateOrderStatusInDb(id, nextStatus, timeline) {
+  if (isFirebaseConnected) {
+    db.collection('orders').doc(id).update({
+      status: nextStatus,
+      timeline: timeline
+    });
+  } else {
+    const idx = orders.findIndex(o => o.id === id);
+    if (idx !== -1) {
+      orders[idx].status = nextStatus;
+      orders[idx].timeline = timeline;
+      localStorage.setItem('la_dolce_orders', JSON.stringify(orders));
+      renderAdmin();
+      updateCounts();
+      if (myTicketId === id) {
+        renderTicket(id);
+      }
     }
   }
+}
 
-  knownOrderIds = new Set(currentIds);
-  isFirstLoad = false;
-  orders = list;
-  
-  renderAdmin();
-  updateCounts();
-  if (myTicketId) {
-    renderTicket(myTicketId);
+function addOrderToDb(newOrder) {
+  if (isFirebaseConnected) {
+    return db.collection('orders').doc(newOrder.id).set(newOrder);
+  } else {
+    return new Promise((resolve) => {
+      orders.unshift(newOrder);
+      localStorage.setItem('la_dolce_orders', JSON.stringify(orders));
+      renderAdmin();
+      updateCounts();
+      resolve();
+    });
   }
-});
+}
 
-// Seeds
 function seedMenuIfEmpty() {
   const batch = db.batch();
   let count = 0;
@@ -797,57 +960,7 @@ function seedMenuIfEmpty() {
   batch.commit();
 }
 
-function seedOrdersIfEmpty() {
-  const demos = [
-    {items:[{name:'Creamy Coffee (SIG)',variantLabel:'Standard',qty:1,price:59,addons:[]}],status:'making',ago:8, customerName: 'ສົມສັກ (Somsack)', customerPhone: '020 5555 1234'},
-    {items:[{name:'Latte',variantLabel:'Iced',qty:1,price:36,addons:['Oat milk']}],status:'waiting',ago:3, customerName: 'ແກ້ວ (Keo)', customerPhone: '020 7777 5678'},
-    {items:[{name:'Thai Tea Cream Cheese',variantLabel:'Standard',qty:1,price:56,addons:[]}],status:'ready',ago:20, customerName: 'ນ້ອຍ (Noy)', customerPhone: '020 9999 8888'},
-  ];
-  demos.forEach((d, idx) => {
-    const ticketId = '#' + (1001 + idx);
-    const nowFmt = fmt(new Date(Date.now() - d.ago * 60000));
-    const total = d.items.reduce((s,i)=>s+i.qty*i.price,0);
-    const tl = [
-      {label:'Order placed',time:fmt(new Date(Date.now()-d.ago*60000)),done:true},
-      {label:'Barista accepted',time:d.status!=='waiting'?fmt(new Date(Date.now()-(d.ago-1)*60000)):null,done:d.status!=='waiting'},
-      {label:'Making drink',time:d.status==='ready'?fmt(new Date(Date.now()-15*60000)):null,done:d.status==='ready',active:d.status==='making'},
-      {label:'Ready for pickup',time:d.status==='ready'?fmt(new Date(Date.now()-5*60000)):null,done:d.status==='ready'},
-    ];
-    db.collection('orders').doc(ticketId).set({
-      id: ticketId,
-      status: d.status,
-      type: 'Take Away',
-      customerName: d.customerName,
-      customerPhone: d.customerPhone,
-      items: d.items,
-      total,
-      createdAt: nowFmt,
-      elapsed: d.ago,
-      maxTime: 12,
-      timeline: tl,
-      timestamp: Date.now() - d.ago * 60000
-    });
-  });
-}
-
-// Reset Database function (deletes and re-seeds)
-function resetMenuToDefault() {
-  if (confirm('ທ່ານຕ້ອງການລຶບເມນູເກົ່າທັງໝົດໃນຖານຂໍ້ມູນ ແລະ ຕັ້ງຄ່າເມນູໃໝ່ຕາມຄ່າເລີ່ມຕົ້ນແມ່ນບໍ່? (ຂໍ້ມູນເກົ່າຈະຫາຍໄປ)')) {
-    db.collection('menu').get().then(snapshot => {
-      const batch = db.batch();
-      snapshot.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-      batch.commit().then(() => {
-        alert('ລີເຊັດຖານຂໍ້ມູນສຳເລັດແລ້ວ! ລະບົບກຳລັງດຶງເມນູໃໝ່...');
-      });
-    }).catch(err => {
-      alert('ເກີດຂໍ້ຜິດພາດ: ' + err.message);
-    });
-  }
-}
-
-/* ---- PIN ---- */
+/* ---- PIN CODE ---- */
 function tryGoAdmin(){
   if(adminUnlocked){ showAdminView(); return; }
   showPinScreen();
@@ -904,7 +1017,7 @@ function showAdminView(){
   setBtnOn('btn-admin');
 }
 
-/* ---- IMAGE COMPRESSION & UPLOADS WITH PROGRESS ---- */
+/* ---- COMPRESSION & UPLOADS ---- */
 function compressImage(base64Str, maxWidth, maxHeight, callback) {
   const img = new Image();
   img.src = base64Str;
@@ -928,10 +1041,7 @@ function compressImage(base64Str, maxWidth, maxHeight, callback) {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0, width, height);
     
-    // First pass: Try maximum quality (0.96) at ultra-high resolution (24K details)
     let result = canvas.toDataURL('image/jpeg', 0.96);
-    
-    // Safety guard: If base64 length exceeds Firestore 1MB doc limit, do secondary fallback passes
     if (result.length > 1000000) {
       result = canvas.toDataURL('image/jpeg', 0.85);
     }
@@ -941,16 +1051,14 @@ function compressImage(base64Str, maxWidth, maxHeight, callback) {
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       result = canvas.toDataURL('image/jpeg', 0.82);
     }
-    
     callback(result);
   };
   img.onerror = (err) => {
-    console.error("Image loading failed, falling back to raw payload:", err);
+    console.error("Compression failed:", err);
     callback(base64Str);
   };
 }
 
-// Function to simulate progress line on base64 Firestore writes
 function simulateUploadProgress(type) {
   const container = document.getElementById(type + '-upload-progress');
   const bar = document.getElementById(type + '-progress-bar');
@@ -993,16 +1101,30 @@ function handleMenuUpload(e){
   const r = new FileReader();
   r.onload = ev => {
     const prog = simulateUploadProgress('menu');
-    compressImage(ev.target.result, 3200, 3200, (compressed) => { // High-definition 3200px limit for "24K" crispiness
-      db.collection('settings').doc('config').set({ menuDataUrl: compressed }, { merge: true })
-        .then(() => {
-          prog.complete();
-          document.getElementById('menu-note').textContent = f.name;
-        })
-        .catch(err => {
-          prog.error();
-          console.error("Error saving menu image:", err);
-        });
+    compressImage(ev.target.result, 3200, 3200, (compressed) => {
+      if (isFirebaseConnected) {
+        db.collection('settings').doc('config').set({ menuDataUrl: compressed }, { merge: true })
+          .then(() => {
+            prog.complete();
+            document.getElementById('menu-note').textContent = f.name;
+          })
+          .catch(err => {
+            prog.error();
+            console.error("Error menu upload:", err);
+          });
+      } else {
+        menuDataUrl = compressed;
+        localStorage.setItem('la_dolce_menu_image', compressed);
+        const t = document.getElementById('menu-thumb');
+        if (t) { t.src = menuDataUrl; t.style.display = 'block'; }
+        const d = document.getElementById('menu-display');
+        if (d) { d.src = menuDataUrl; d.style.display = 'block'; }
+        const placeholder = document.getElementById('menu-placeholder');
+        if (placeholder) placeholder.style.display = 'none';
+        
+        prog.complete();
+        document.getElementById('menu-note').textContent = f.name;
+      }
     });
   };
   r.readAsDataURL(f);
@@ -1014,20 +1136,30 @@ function handleQRUpload(e){
   r.onload = ev => {
     const prog = simulateUploadProgress('qr');
     compressImage(ev.target.result, 500, 500, (compressed) => {
-      db.collection('settings').doc('config').set({ qrDataUrl: compressed }, { merge: true })
-        .then(() => {
-          prog.complete();
-        })
-        .catch(err => {
-          prog.error();
-          console.error("Error saving QR image:", err);
-        });
+      if (isFirebaseConnected) {
+        db.collection('settings').doc('config').set({ qrDataUrl: compressed }, { merge: true })
+          .then(() => {
+            prog.complete();
+          })
+          .catch(err => {
+            prog.error();
+            console.error("Error QR upload:", err);
+          });
+      } else {
+        qrDataUrl = compressed;
+        localStorage.setItem('la_dolce_qr_image', compressed);
+        const q = document.getElementById('qr-thumb');
+        if (q) { q.src = qrDataUrl; q.style.display = 'block'; }
+        const qrNote = document.getElementById('qr-note');
+        if (qrNote) qrNote.textContent = 'QR image uploaded and ready';
+        
+        prog.complete();
+      }
     });
   };
   r.readAsDataURL(f);
 }
 
-/* ---- SLIP UPLOAD CLIENT SIDE ---- */
 function handleSlipUpload(e, orderId) {
   const f = e.target.files[0]; if(!f) return;
   const r = new FileReader();
@@ -1039,24 +1171,40 @@ function handleSlipUpload(e, orderId) {
 
     compressImage(ev.target.result, 1200, 1200, (compressed) => {
       progBar.style.width = '65%';
-      db.collection('orders').doc(orderId).update({
-        slipUrl: compressed,
-        status: 'paid' // Set immediately to paid when slip is provided!
-      }).then(() => {
+      
+      if (isFirebaseConnected) {
+        db.collection('orders').doc(orderId).update({
+          slipUrl: compressed,
+          status: 'paid'
+        }).then(() => {
+          progBar.style.width = '100%';
+          setTimeout(() => {
+            progContainer.style.display = 'none';
+          }, 1000);
+        }).catch(err => {
+          progContainer.style.display = 'none';
+          console.error("Slip upload error:", err);
+        });
+      } else {
+        const idx = orders.findIndex(o => o.id === orderId);
+        if (idx !== -1) {
+          orders[idx].slipUrl = compressed;
+          orders[idx].status = 'paid';
+          localStorage.setItem('la_dolce_orders', JSON.stringify(orders));
+          renderAdmin();
+          updateCounts();
+          renderTicket(orderId);
+        }
         progBar.style.width = '100%';
         setTimeout(() => {
           progContainer.style.display = 'none';
         }, 1000);
-      }).catch(err => {
-        progContainer.style.display = 'none';
-        console.error("Slip upload error:", err);
-      });
+      }
     });
   };
   r.readAsDataURL(f);
 }
 
-/* ---- ADMIN SETTINGS COLLAPSIBLE TOGGLE ---- */
 function toggleAdminSettingsPanel() {
   const panel = document.getElementById('admin-settings-panel');
   const txt = document.getElementById('settings-toggle-txt');
@@ -1071,7 +1219,6 @@ function toggleAdminSettingsPanel() {
 
 /* ---- DAILY REPORT SYSTEM ---- */
 function openDailyReport() {
-  // Pull completed / paid orders
   const sales = orders.filter(o => o.status === 'completed' || o.status === 'paid');
   const el = document.getElementById('report-content');
   
@@ -1096,7 +1243,6 @@ function openDailyReport() {
     totalRevenue += billTotal;
     billPrices.push(billTotal);
 
-    // Busiest hour calculations
     let hr = 'N/A';
     if (o.timestamp) {
       const dt = new Date(o.timestamp);
@@ -1109,7 +1255,6 @@ function openDailyReport() {
     }
     hourCounts[hr] = (hourCounts[hr] || 0) + 1;
 
-    // Items metrics
     if (o.items && Array.isArray(o.items)) {
       o.items.forEach(item => {
         const qty = Number(item.qty) || 0;
@@ -1121,9 +1266,7 @@ function openDailyReport() {
   });
 
   const maxBill = Math.max(...billPrices);
-  const minBill = Math.min(...billPrices);
 
-  // Peak Hours calculation
   let busiestHour = 'N/A';
   let maxOrders = 0;
   for (let h in hourCounts) {
@@ -1133,7 +1276,6 @@ function openDailyReport() {
     }
   }
 
-  // Top Selling Drink
   let bestDrink = 'N/A';
   let bestDrinkCount = 0;
   for (let d in itemCounts) {
@@ -1158,7 +1300,7 @@ function openDailyReport() {
     </div>
     <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:0.5px solid var(--border);">
       <span style="font-size:12px; font-weight:500;">ມູນຄ່າບິນຕ່ຳສຸດ (Min Bill)</span>
-      <span style="font-weight:600;">${minPriceFailsafe(prices = [minPrice])} K</span>
+      <span style="font-weight:600;">${minPriceFailsafe(billPrices)} K</span>
     </div>
     <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:0.5px solid var(--border);">
       <span style="font-size:12px; font-weight:500;">ຊ່ວງເວລາຂາຍດີ (Peak Hours)</span>
@@ -1173,6 +1315,7 @@ function openDailyReport() {
 }
 
 function minPriceFailsafe(prices) {
+  if (!prices || !prices.length) return 0;
   const filtered = prices.filter(p => p !== Infinity && p !== -Infinity && !isNaN(p));
   return filtered.length > 0 ? Math.min(...filtered) : 0;
 }
@@ -1181,7 +1324,6 @@ function closeDailyReport() {
   document.getElementById('report-modal').style.display = 'none';
 }
 
-/* ---- SLIP VIEWING ADMIN BLOCK ---- */
 function viewSlipModal(orderId) {
   const o = orders.find(x => x.id === orderId);
   if (o && o.slipUrl) {
@@ -1302,27 +1444,29 @@ function saveMenuItem() {
   if (sizeLabels) {
     payload.sizeLabels = sizeLabels;
   } else {
-    payload.sizeLabels = firebase.firestore.FieldValue.delete();
+    payload.sizeLabels = null; 
   }
 
-  if (editMenuId) {
-    db.collection('menu').doc(editMenuId).update(payload).then(() => cancelEditMenu());
-  } else {
-    if (payload.sizeLabels === firebase.firestore.FieldValue.delete()) {
-      delete payload.sizeLabels;
-    }
-    payload.createdAt = Date.now();
-    db.collection('menu').add(payload).then(() => cancelEditMenu());
-  }
+  saveMenuToDb(payload, editMenuId)
+    .then(() => {
+      cancelEditMenu();
+      alert('ບັນທຶກຂໍ້ມູນເມນູສຳເລັດແລ້ວ! (Saved successfully)');
+    })
+    .catch(err => {
+      console.error("Save error: ", err);
+      alert('ເກີດຂໍ́ຜິດພາດໃນການບັນທຶກ: ' + err.message);
+    });
 }
 
 function deleteMenuItem(id) {
   if (confirm('Are you sure you want to delete this drink?')) {
-    db.collection('menu').doc(id).delete();
+    deleteMenuFromDb(id).then(() => {
+      alert('ລຶບເມນູສຳເລັດແລ້ວ!');
+    });
   }
 }
 
-/* ---- CUSTOMER CATEGORIES & DRINK CUSTOMIZATION ---- */
+/* ---- CUSTOMER CATEGORIES & CUSTOMIZATION ---- */
 function renderCategoryTabs() {
   const container = document.getElementById('category-tabs');
   if (!container) return;
@@ -1356,7 +1500,6 @@ function openCustomizeModal(itemId) {
   document.getElementById('cust-drink-name').textContent = drink.name;
   document.getElementById('cust-drink-lao').textContent = drink.lao || '';
 
-  // Render Variant Selection Buttons with fallback
   const variantContainer = document.getElementById('variant-options');
   const prices = drink.prices || (drink.price ? [drink.price] : [0]);
   const labels = drink.sizeLabels || DEF_LABELS;
@@ -1374,7 +1517,6 @@ function openCustomizeModal(itemId) {
     `;
   }).join('');
 
-  // Render Add-ons Checkboxes
   const addonContainer = document.getElementById('addon-options');
   addonContainer.innerHTML = ADDONS.map((addon, idx) => {
     return `
@@ -1445,7 +1587,6 @@ function addCustomizedToCart() {
   const variantLabel = labels[idx] || (prices.length === 1 ? 'Standard' : `Option ${idx+1}`);
   const variantPrice = prices[idx] || prices[0];
 
-  // Map chosen addons
   const selectedAddons = [];
   for (let name in tempSelection.addons) {
     selectedAddons.push({ name: name, price: tempSelection.addons[name] });
@@ -1472,7 +1613,7 @@ function addCustomizedToCart() {
   renderMenu();
 }
 
-/* ---- CART & SUMMARY ---- */
+/* ---- CART ---- */
 function updateCartItemQty(key, delta) {
   if (cart[key]) {
     cart[key].qty += delta;
@@ -1504,7 +1645,6 @@ function renderMenu(){
   listContainer.innerHTML = drinks.map(m => {
     const badgeHtml = m.badge ? `<span style="background:var(--border-accent); color:white; font-size:9px; padding:2px 5px; border-radius:4px; margin-left:6px; font-weight:600;">${m.badge}</span>` : '';
     
-    // Total qty of this base drink in cart across all variants
     const totalQty = Object.values(cart)
       .filter(item => item.itemId === m.id)
       .reduce((s, item) => s + item.qty, 0);
@@ -1564,9 +1704,9 @@ function renderCartSummary() {
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
             <div style="display:flex; align-items:center; gap:4px;">
-              <button class="qty-btn" style="width:20px; height:20px; font-size:11px;" onclick="updateCartItemQty('${key}', -1)">−</button>
+              <button class="qty-btn" style="width:20px; height:20px; font-size:11px;" onclick="event.stopPropagation(); updateCartItemQty('${key}', -1)">−</button>
               <span style="font-size:12px; font-weight:600; min-width:12px; text-align:center;">${item.qty}</span>
-              <button class="qty-btn" style="width:20px; height:20px; font-size:11px;" onclick="updateCartItemQty('${key}', 1)">+</button>
+              <button class="qty-btn" style="width:20px; height:20px; font-size:11px;" onclick="event.stopPropagation(); updateCartItemQty('${key}', 1)">+</button>
             </div>
             <div style="font-size:12px; font-weight:500; min-width:50px; text-align:right;">${totalCost} K</div>
           </div>
@@ -1625,9 +1765,9 @@ function placeOrder(){
     ]
   };
 
-  db.collection('orders').doc(ticketId).set(newOrder).then(() => {
+  addOrderToDb(newOrder).then(() => {
     myTicketId = ticketId;
-    lastTicketStatus = 'waiting'; // Init status listener tracking
+    lastTicketStatus = 'waiting'; 
     cart = {};
     document.getElementById('cust-name').value = '';
     document.getElementById('cust-phone').value = '';
@@ -1709,7 +1849,7 @@ function renderTicket(id){
         <div class="qr-title"><i class="ti ti-qrcode" aria-hidden="true"></i> Total ${o.total} K</div>
         <div style="padding:20px 0;color:var(--text-muted);font-size:12px">
           <i class="ti ti-qrcode" style="font-size:40px;display:block;margin-bottom:6px;opacity:.3" aria-hidden="true"></i>
-          QR not uploaded yet — ask admin to upload PromptPay QR
+          QR not uploaded yet — ask admin to upload QR
         </div>
         
         <div style="margin-top:14px; text-align:left;">
@@ -1756,7 +1896,7 @@ function renderTicket(id){
   <span class="new-order-lnk" onclick="startNewOrder()">← Order something else</span>`;
 }
 
-/* ---- ADMIN ADVANCE ---- */
+/* ---- ADMIN TICKETS PROCESS ---- */
 function advance(id){
   const o = orders.find(x=>x.id===id); if(!o) return;
   const map = {waiting:'making',making:'ready',ready:'completed',paid:'completed'};
@@ -1768,10 +1908,7 @@ function advance(id){
   if(nextStatus==='making'){ tl[1].done=true; tl[1].time=now; tl[2].active=true; }
   if(nextStatus==='ready'){  tl[2].done=true; tl[2].active=false; tl[2].time=now; tl[3].done=true; tl[3].time=now; }
   
-  db.collection('orders').doc(id).update({
-    status: nextStatus,
-    timeline: tl
-  });
+  updateOrderStatusInDb(id, nextStatus, tl);
 }
 function viewCust(id){ myTicketId=id; goView('customer'); showTicketPage(id); }
 
@@ -1782,6 +1919,7 @@ function getElapsed(o) {
 
 function renderAdmin(){
   const grid = document.getElementById('admin-grid');
+  if(!grid) return;
   const list = currentFilter==='all'
     ? orders.filter(o=>o.status!=='completed')
     : orders.filter(o=>o.status===currentFilter);
@@ -1824,7 +1962,6 @@ function renderAdmin(){
         <div class="timer"><i class="ti ti-clock" style="font-size:12px" aria-hidden="true"></i><span style="${over?'color:#E24B4A':''}">${timerTxt(o)}</span></div>
         <div class="prog"><div class="prog-fill" style="width:${pct}%;background:${pCol}"></div></div>
         
-        <!-- SLIP VIEWING UTILITY BUTTON -->
         ${o.slipUrl ? `
           <button class="abtn" onclick="viewSlipModal('${o.id}')" style="background:#E8F5E9; border-color:#2E7D32; color:#2E7D32; margin-bottom:6px; font-weight:600;">
             <i class="ti ti-eye"></i> View Slip (ເບິ່ງໃບໂອນ)
@@ -1854,7 +1991,6 @@ function setF(f){
   renderAdmin();
 }
 
-// Force visual sync for menu image
 function refreshMenuImageDisplay() {
   if (menuDataUrl) {
     const d = document.getElementById('menu-display');
@@ -1882,7 +2018,7 @@ function goView(v){
   setBtnOn(v==='admin'?'btn-admin':'btn-cust');
   if(v==='customer'&&!myTicketId) {
     goPage('menu');
-    refreshMenuImageDisplay(); // Force refresh image layout when entering Customer panel
+    refreshMenuImageDisplay(); 
   }
 }
 function goPage(p){
